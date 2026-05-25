@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<ruleset name="OpenWPSecurity - Firewall">
+	<description>PHPCS rules for OpenWPSecurity - Firewall.</description>
+
+	<file>openwpsecurity-firewall.php</file>
+	<file>src</file>
+	<file>templates</file>
+
+	<arg name="basepath" value="."/>
+	<arg name="extensions" value="php"/>
+	<arg value="sp"/>
+
+	<rule ref="PSR12">
+		<exclude name="PSR1.Files.SideEffects.FoundWithSymbols"/>
+		<exclude name="PSR1.Methods.CamelCapsMethodName"/>
+		<exclude name="PSR2.Methods.FunctionCallSignature"/>
+		<exclude name="PSR12.ControlStructures.ControlStructureSpacing"/>
+		<exclude name="Generic.Files.LineLength"/>
+		<exclude name="Generic.WhiteSpace.DisallowTabIndent"/>
+	</rule>
+
+	<rule ref="WordPress-Core">
+		<exclude name="WordPress.Files.FileName"/>
+		<exclude name="WordPress.PHP.YodaConditions.NotYoda"/>
+	</rule>
+	<rule ref="WordPress-Extra">
+		<exclude name="WordPress.Files.FileName"/>
+		<exclude name="WordPress.PHP.YodaConditions.NotYoda"/>
+	</rule>
+
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+</ruleset>

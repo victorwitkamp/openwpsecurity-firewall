@@ -1,0 +1,383 @@
+$panel-background: #fff;
+$panel-border: #d9e3e8;
+$panel-shadow: 0 10px 24px rgba(15, 45, 60, 0.04);
+$text-strong: #17313b;
+$text-muted: #4b6470;
+$panel-subtle: #f7fafb;
+$panel-header: #f3f7f9;
+$chart-start: #3aa0cf;
+$chart-end: #17313b;
+
+.vwfw-admin {
+	max-width: 1320px;
+}
+
+.vwfw-period-form {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	margin: 18px 0 24px;
+}
+
+.vwfw-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 16px;
+	margin: 20px 0 24px;
+}
+
+.vwfw-card,
+.vwfw-panel {
+	background: $panel-background;
+	border: 1px solid $panel-border;
+	border-radius: 14px;
+	padding: 18px;
+	box-shadow: $panel-shadow;
+}
+
+.vwfw-card {
+	strong {
+		display: block;
+		font-size: 28px;
+		line-height: 1.1;
+		margin-top: 8px;
+	}
+}
+
+.vwfw-card-label {
+	display: block;
+	color: $text-muted;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.vwfw-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+	gap: 18px;
+	margin-bottom: 24px;
+}
+
+.vwfw-grid--three {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vwfw-grid--two {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vwfw-record-panel {
+	padding: 20px;
+}
+
+.vwfw-record-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 18px;
+	margin-bottom: 16px;
+
+	h2 {
+		margin: 0 0 6px;
+	}
+}
+
+.vwfw-country-panel {
+	margin-bottom: 18px;
+
+	h3 {
+		margin: 0 0 6px;
+	}
+}
+
+.vwfw-record-total {
+	min-width: 180px;
+	padding: 12px 14px;
+	border: 1px solid $panel-border;
+	border-radius: 12px;
+	background: $panel-subtle;
+	text-align: right;
+
+	strong {
+		display: block;
+		margin-top: 6px;
+		font-size: 24px;
+		line-height: 1.1;
+	}
+}
+
+.vwfw-record-total-label {
+	display: block;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: $text-muted;
+}
+
+.vwfw-record-table-wrap {
+	overflow-x: auto;
+}
+
+.vwfw-pagination {
+	display: flex;
+	justify-content: flex-end;
+	margin: 16px 0 0;
+
+	.tablenav-pages {
+		float: none;
+		margin: 0;
+	}
+
+	.page-numbers {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		align-items: center;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+
+		li {
+			margin: 0;
+		}
+
+		a,
+		span {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 32px;
+			height: 32px;
+			padding: 0 10px;
+			border: 1px solid #c3c4c7;
+			border-radius: 4px;
+			background: #fff;
+			box-sizing: border-box;
+			text-decoration: none;
+		}
+
+		.current {
+			border-color: #2271b1;
+			background: #2271b1;
+			color: #fff;
+		}
+
+		.dots {
+			border: 0;
+			background: transparent;
+			min-width: auto;
+			padding: 0 4px;
+		}
+	}
+}
+
+.vwfw-record-filters,
+.vwfw-request-filters {
+	margin: 0 0 18px;
+}
+
+.vwfw-filter-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
+	align-items: end;
+
+	label {
+		display: block;
+		margin-bottom: 6px;
+	}
+
+	select,
+	input {
+		width: 100%;
+		max-width: 100%;
+	}
+}
+
+.vwfw-filter-flags,
+.vwfw-filter-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: center;
+}
+
+.vwfw-filter-flags {
+	label {
+		display: inline-flex;
+		gap: 8px;
+		align-items: center;
+		margin: 0;
+	}
+
+	input {
+		width: auto;
+	}
+}
+
+.vwfw-settings-section + .vwfw-settings-section {
+	margin-top: 24px;
+	padding-top: 24px;
+	border-top: 1px solid $panel-border;
+}
+
+.vwfw-request-handling-table,
+.vwfw-request-handling-summary-table {
+	min-width: 640px;
+
+	select,
+	input {
+		width: 100%;
+		max-width: 160px;
+	}
+}
+
+.vwfw-country-layout {
+	display: grid;
+	grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+	gap: 20px;
+	align-items: center;
+}
+
+.vwfw-country-donut-shell {
+	display: flex;
+	justify-content: center;
+}
+
+.vwfw-country-donut {
+	width: 200px;
+	height: 200px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: inset 0 0 0 1px rgba(15, 45, 60, 0.06);
+}
+
+.vwfw-country-donut-center {
+	width: 104px;
+	height: 104px;
+	border-radius: 50%;
+	background: $panel-background;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 10px 24px rgba(15, 45, 60, 0.08);
+	text-align: center;
+
+	strong {
+		font-size: 24px;
+		line-height: 1;
+	}
+
+	span {
+		margin-top: 6px;
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: $text-muted;
+	}
+}
+
+.vwfw-country-legend {
+	display: grid;
+	gap: 10px;
+}
+
+.vwfw-country-legend-item {
+	display: grid;
+	grid-template-columns: 12px minmax(0, 1fr) auto;
+	gap: 10px;
+	align-items: center;
+	padding: 8px 10px;
+	border-radius: 10px;
+	background: $panel-subtle;
+}
+
+.vwfw-country-swatch {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+}
+
+.vwfw-country-name {
+	font-weight: 600;
+	color: $text-strong;
+}
+
+.vwfw-country-meta {
+	font-variant-numeric: tabular-nums;
+	color: $text-muted;
+}
+
+.vwfw-chart {
+	overflow-x: auto;
+	padding-top: 12px;
+}
+
+.vwfw-bars {
+	display: flex;
+	gap: 10px;
+	align-items: flex-end;
+	min-height: 220px;
+	padding: 12px 0;
+}
+
+.vwfw-bar-wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	min-width: 46px;
+
+	span {
+		font-size: 11px;
+		color: $text-muted;
+		writing-mode: vertical-rl;
+		transform: rotate(180deg);
+		max-height: 120px;
+	}
+}
+
+.vwfw-bar {
+	width: 22px;
+	border-radius: 999px 999px 4px 4px;
+	background: linear-gradient(180deg, $chart-start, $chart-end);
+}
+
+.vwfw-break {
+	word-break: break-word;
+	overflow-wrap: anywhere;
+}
+
+@media (max-width: 782px) {
+	.vwfw-period-form,
+	.vwfw-filter-flags,
+	.vwfw-filter-actions {
+		align-items: flex-start;
+	}
+
+	.vwfw-record-header,
+	.vwfw-country-layout {
+		grid-template-columns: 1fr;
+		display: grid;
+	}
+
+	.vwfw-record-total {
+		text-align: left;
+	}
+
+	.vwfw-grid--three,
+	.vwfw-grid--two {
+		grid-template-columns: 1fr;
+	}
+
+	.vwfw-pagination {
+		justify-content: flex-start;
+	}
+}
