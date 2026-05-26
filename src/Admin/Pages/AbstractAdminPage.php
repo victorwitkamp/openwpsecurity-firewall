@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Admin\Pages;
 
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Pagination\AdminPaginator;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Pagination\AdminPaginator;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\ReportPeriod;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\EventReportFormatter;
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\ReportPeriod;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

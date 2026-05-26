@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Configuration;
 
+use VictorWitkamp\OpenWPSecurity\Core\Configuration\SettingsInputSanitizer;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestHandlingCatalog;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -11,8 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class Settings {
-	private const OPTION_NAME        = 'openwpsecurity_firewall_settings';
-	private const LEGACY_OPTION_NAME = 'vw_firewall_2026_settings';
+	private const OPTION_NAME = 'openwpsecurity_firewall_settings';
 
 	private SettingsInputSanitizer $input_sanitizer;
 	private RequestHandlingCatalog $request_handling_catalog;
@@ -27,9 +27,7 @@ final class Settings {
 		$current  = get_option( self::OPTION_NAME, null );
 
 		if ( null === $current ) {
-			$legacy = get_option( self::LEGACY_OPTION_NAME, null );
-			$seed   = is_array( $legacy ) ? wp_parse_args( $legacy, $defaults ) : $defaults;
-			add_option( self::OPTION_NAME, $seed );
+			add_option( self::OPTION_NAME, $defaults );
 			return;
 		}
 

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "730031030aab766ca56ed0f5d9a45499",
+    "content-hash": "42a8e4ce7755a5d50dfdaabfae20beda",
     "packages": [
         {
             "name": "laminas/laminas-diactoros",
@@ -224,16 +224,22 @@
         },
         {
             "name": "openwpsecurity/core",
-            "version": "0.1.0",
+            "version": "0.1.1",
             "dist": {
                 "type": "path",
                 "url": "../openwpsecurity-core",
-                "reference": "04114bed646e7d9e80ceb0bea8e10e094c70d530"
+                "reference": "73bb5118686fa455619fa8e811da72172e23f995"
             },
             "require": {
                 "laminas/laminas-diactoros": "^3.8",
                 "laminas/laminas-httphandlerrunner": "^2.13",
                 "php": ">=8.2"
+            },
+            "require-dev": {
+                "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+                "phpunit/phpunit": "^10.5 || ^11.0",
+                "squizlabs/php_codesniffer": "^3.13",
+                "wp-coding-standards/wpcs": "^3.0"
             },
             "type": "library",
             "autoload": {
@@ -241,10 +247,40 @@
                     "VictorWitkamp\\OpenWPSecurity\\Core\\": "src/"
                 }
             },
+            "autoload-dev": {
+                "psr-4": {
+                    "VictorWitkamp\\OpenWPSecurity\\Core\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "install-codestandards": [
+                    "PHPCSStandards\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\Plugin::run"
+                ],
+                "phpcs": [
+                    "phpcs --standard=phpcs.xml.dist"
+                ],
+                "phpcbf": [
+                    "phpcbf --standard=phpcs.xml.dist"
+                ],
+                "test": [
+                    "phpunit --configuration phpunit.xml.dist"
+                ]
+            },
             "license": [
                 "GPL-2.0-or-later"
             ],
-            "description": "Shared core utilities for OpenWPSecurity WordPress plugins.",
+            "description": "PSR HTTP and WordPress adapter utilities for OpenWPSecurity plugins.",
+            "homepage": "https://github.com/victorwitkamp/openwpsecurity-core",
+            "keywords": [
+                "openwpsecurity",
+                "psr-7",
+                "wordpress",
+                "wordpress-plugin"
+            ],
+            "support": {
+                "issues": "https://github.com/victorwitkamp/openwpsecurity-core/issues",
+                "source": "https://github.com/victorwitkamp/openwpsecurity-core"
+            },
             "transport-options": {
                 "symlink": true,
                 "relative": true

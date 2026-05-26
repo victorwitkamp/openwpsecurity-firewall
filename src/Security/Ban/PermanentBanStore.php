@@ -12,8 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class PermanentBanStore {
-	private const OPTION_NAME        = 'openwpsecurity_firewall_permanent_bans';
-	private const LEGACY_OPTION_NAME = 'vw_firewall_2026_permanent_bans';
+	private const OPTION_NAME = 'openwpsecurity_firewall_permanent_bans';
 
 	private EventLogger $event_logger;
 	private IpAddressInspector $ip_address_inspector;
@@ -27,8 +26,6 @@ final class PermanentBanStore {
 		if ( get_option( self::OPTION_NAME, null ) === null ) {
 			add_option( self::OPTION_NAME, array(), '', false );
 		}
-
-		$this->migrate_legacy_bans();
 	}
 
 	public function get_all_bans(): array {
@@ -91,35 +88,5 @@ final class PermanentBanStore {
 				),
 			)
 		);
-	}
-
-	private function migrate_legacy_bans(): void {
-		$legacy_bans = get_option( self::LEGACY_OPTION_NAME, array() );
-
-		if ( ! is_array( $legacy_bans ) || array() === $legacy_bans ) {
-			return;
-		}
-
-		$current_bans = $this->get_all_bans();
-		$changed      = false;
-
-		foreach ( $legacy_bans as $ip => $ban ) {
-			if ( ! is_array( $ban ) || isset( $current_bans[ $ip ] ) ) {
-				continue;
-			}
-
-			$source = isset( $ban['source'] ) ? (string) $ban['source'] : '';
-
-			if ( in_array( $source, array( 'login_protection', 'login_lockout' ), true ) ) {
-				continue;
-			}
-
-			$current_bans[ $ip ] = $ban;
-			$changed             = true;
-		}
-
-		if ( $changed ) {
-			update_option( self::OPTION_NAME, $current_bans, false );
-		}
 	}
 }

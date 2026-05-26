@@ -6,7 +6,7 @@ namespace VictorWitkamp\OpenWPSecurity\Firewall\Logging;
 
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 use VictorWitkamp\OpenWPSecurity\Firewall\Http\RequestContext;
-use VictorWitkamp\OpenWPSecurity\Firewall\Location\GeoIpLookup;
+use VictorWitkamp\OpenWPSecurity\Core\Location\GeoIpLookup;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

@@ -26,7 +26,6 @@ final class EventSchema {
 			$this->create_table();
 		}
 
-		$this->delete_obsolete_event_types();
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, false );
 	}
 
@@ -56,26 +55,6 @@ final class EventSchema {
 		) {$charset_collate};";
 
 		dbDelta( $sql );
-	}
-
-	private function delete_obsolete_event_types(): void {
-		global $wpdb;
-
-		$table_name = $this->event_table->name();
-
-		if ( ! $this->table_exists( $table_name ) ) {
-			return;
-		}
-
-		$wpdb->delete(
-			$table_name,
-			array(
-				'event_type' => 'request_blocked',
-			),
-			array(
-				'%s',
-			)
-		);
 	}
 
 	private function table_exists( string $table_name ): bool {

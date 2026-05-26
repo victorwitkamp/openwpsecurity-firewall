@@ -8,38 +8,29 @@ Stable tag: 0.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-WordPress request logging, request handling, captcha challenges, and a security dashboard.
+WordPress request logging, endpoint rate limiting, captcha challenges, temporary blocks, permanent bans, and security incident reporting.
 
 == Description ==
 
-OpenWPSecurity - Firewall records every request that reaches WordPress, applies request-handling rules per endpoint, manages permanent bans, and can challenge aggressive frontend traffic with a captcha.
+OpenWPSecurity - Firewall records WordPress request activity and applies request-handling controls before abusive traffic reaches normal page handling.
 
-Current highlights:
+Runtime behavior:
 
-* Logs all WordPress request types, including frontend pages, `wp-login.php`, `admin-ajax.php`, REST API requests, `xmlrpc.php`, `wp-cron.php`, and admin requests.
-* Separates request analytics from security incidents in the admin UI.
-* Applies request-handling rules per endpoint for frontend pages, `wp-login.php`, REST API traffic, `xmlrpc.php`, cron, and other WordPress entry points.
-* Includes policy scaffolding for per-endpoint handling rules, while defaulting new request-type controls to `Log Only`.
+* Logs WordPress request activity for frontend pages, `wp-login.php`, admin, `admin-ajax.php`, REST API, `xmlrpc.php`, and `wp-cron.php`.
+* Applies endpoint-local rate limits for frontend pages, login, AJAX, REST API, XML-RPC, and cron requests.
+* Uses an HTTP 429 response for rate-limited frontend and login requests.
+* Supports captcha challenges for frontend and login traffic.
+* Creates global temporary request-handling blocks after configured rate-limit or captcha failure thresholds.
+* Escalates repeated temporary blocks into permanent IP bans.
+* Separates request activity from security incidents in the admin interface.
+* Stores firewall events in the plugin's own database table.
 
-Development/build notes:
+Stored event fields include event type, timestamp, IP address, country fields, user agent, request URI, lockout expiry, and JSON details for request type, method, thresholds, captcha state, and ban context.
 
-* PHP tooling is managed with Composer.
-* Admin styles are authored in `assets/scss/admin.scss` and compiled to `assets/css/admin.css`.
-* Run `npm run build:css` after changing SCSS sources.
-* GitHub Actions workflows are included for CI and release packaging.
+Remote GeoIP lookup is optional and disabled by default. Local, private, and reserved IP addresses are classified without remote lookup.
 
 == Installation ==
 
-1. Upload the plugin folder to `/wp-content/plugins/`.
-2. Activate `OpenWPSecurity - Firewall` in WordPress admin.
-3. Review the `Settings` page before enabling stricter request-type handling rules.
-
-== Frequently Asked Questions ==
-
-= Does this block all request types by default? =
-
-No. The plugin logs all request types immediately, but the new per-endpoint handling rules default to `Log Only` until you configure them.
-
-= Where do I change the admin CSS? =
-
-Edit `assets/scss/admin.scss` and rebuild `assets/css/admin.css` with `npm run build:css`.
+1. Upload the packaged plugin folder to `/wp-content/plugins/`.
+2. Activate `OpenWPSecurity - Firewall`.
+3. Review Firewall settings for trusted IP headers, whitelisted IPs, endpoint rate limits, captcha, temporary blocks, permanent bans, retention, and GeoIP lookup.

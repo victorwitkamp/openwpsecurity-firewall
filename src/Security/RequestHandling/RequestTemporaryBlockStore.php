@@ -11,8 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class RequestTemporaryBlockStore {
-	private const TEMPORARY_BLOCK_COUNTS_OPTION_NAME        = 'openwpsecurity_firewall_request_handling_global_temporary_block_counts';
-	private const LEGACY_TEMPORARY_BLOCK_COUNTS_OPTION_NAME = 'vw_firewall_2026_request_handling_global_temporary_block_counts';
+	private const TEMPORARY_BLOCK_COUNTS_OPTION_NAME = 'openwpsecurity_firewall_request_handling_global_temporary_block_counts';
 
 	private TransientKeyBuilder $transient_key_builder;
 
@@ -22,9 +21,7 @@ final class RequestTemporaryBlockStore {
 
 	public function ensure_storage(): void {
 		if ( get_option( self::TEMPORARY_BLOCK_COUNTS_OPTION_NAME, null ) === null ) {
-			$legacy_counts = get_option( self::LEGACY_TEMPORARY_BLOCK_COUNTS_OPTION_NAME, array() );
-			$seed          = is_array( $legacy_counts ) ? $legacy_counts : array();
-			add_option( self::TEMPORARY_BLOCK_COUNTS_OPTION_NAME, $seed, '', false );
+			add_option( self::TEMPORARY_BLOCK_COUNTS_OPTION_NAME, array(), '', false );
 		}
 	}
 

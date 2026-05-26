@@ -3,6 +3,7 @@
 /assets/css/
 /coverage/
 /dist/
+*.md
 /.phpunit.result.cache
 /.sass-cache/
 npm-debug.log*

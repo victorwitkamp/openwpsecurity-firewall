@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Admin\Pages;
 
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Presentation\CountryDistributionPanel;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\ReportPeriod;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Requests\SecurityIncidentFilterInput;
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Presentation\CountryDistributionPanel;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\EventReportFormatter;
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\ReportPeriod;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\Reports\SecurityIncidentReport;
 
 if ( ! defined( 'ABSPATH' ) ) {

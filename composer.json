@@ -1,6 +1,6 @@
 {
 	"name": "victorwitkamp/openwpsecurity-firewall",
-	"description": "Development tooling for the OpenWPSecurity - Firewall plugin.",
+	"description": "WordPress request logging, request handling, captcha challenges, and permanent bans.",
 	"type": "wordpress-plugin",
 	"license": "GPL-2.0-or-later",
 	"repositories": [
@@ -10,7 +10,7 @@
 			"options": {
 				"symlink": true,
 				"versions": {
-					"openwpsecurity/core": "0.1.0"
+					"openwpsecurity/core": "0.1.1"
 				}
 			}
 		}
