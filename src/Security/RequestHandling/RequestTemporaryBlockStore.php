@@ -59,6 +59,7 @@ final class RequestTemporaryBlockStore {
 		$block = array(
 			'expires_at'           => time() + $block_minutes * MINUTE_IN_SECONDS,
 			'trigger_request_type' => $trigger_request_type,
+			'denial_count'         => 0,
 		);
 
 		set_transient(
@@ -72,6 +73,26 @@ final class RequestTemporaryBlockStore {
 
 	public function clear_active_temporary_block( string $ip ): void {
 		delete_transient( $this->transient_key_builder->request_handling_temporary_block( $ip ) );
+	}
+
+	public function record_active_temporary_block_denial( string $ip, string $request_type ): array {
+		$block = $this->active_temporary_block( $ip );
+
+		if ( array() === $block ) {
+			return array();
+		}
+
+		$block['denial_count']             = (int) ( $block['denial_count'] ?? 0 ) + 1;
+		$block['last_denied_request_type'] = $request_type;
+		$remaining_seconds                 = max( 1, (int) $block['expires_at'] - time() );
+
+		set_transient(
+			$this->transient_key_builder->request_handling_temporary_block( $ip ),
+			$block,
+			$remaining_seconds
+		);
+
+		return $block;
 	}
 
 	public function temporary_block_count( string $ip ): int {
@@ -98,8 +119,10 @@ final class RequestTemporaryBlockStore {
 		}
 
 		return array(
-			'expires_at'           => $expires_at,
-			'trigger_request_type' => isset( $block['trigger_request_type'] ) ? (string) $block['trigger_request_type'] : '',
+			'expires_at'               => $expires_at,
+			'trigger_request_type'     => isset( $block['trigger_request_type'] ) ? (string) $block['trigger_request_type'] : '',
+			'denial_count'             => isset( $block['denial_count'] ) ? max( 0, (int) $block['denial_count'] ) : 0,
+			'last_denied_request_type' => isset( $block['last_denied_request_type'] ) ? (string) $block['last_denied_request_type'] : '',
 		);
 	}
 

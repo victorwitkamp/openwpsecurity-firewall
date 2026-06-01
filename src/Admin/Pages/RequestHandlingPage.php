@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Admin\Pages;
 
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Pages\AbstractAdminPage;
 use VictorWitkamp\OpenWPSecurity\Core\Admin\Presentation\CountryDistributionPanel;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Presentation\FilterFormRenderer;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Presentation\RecordTablePanel;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\EventReportFormatter;
 use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\ReportPeriod;
+use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Navigation\AdminMenu;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Requests\RequestActivityFilterInput;
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\EventReportFormatter;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\Reports\RequestActivityReport;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,17 +19,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class RequestHandlingPage extends AbstractAdminPage {
-	private const PER_PAGE = 50;
+	private const PER_PAGE = 25;
 
 	private RequestActivityReport $request_activity_report;
 	private RequestActivityFilterInput $request_activity_filter_input;
 	private CountryDistributionPanel $country_distribution_panel;
+	private FilterFormRenderer $filter_form_renderer;
+	private RecordTablePanel $record_table_panel;
 
-	public function __construct( RequestActivityReport $request_activity_report, RequestActivityFilterInput $request_activity_filter_input, CountryDistributionPanel $country_distribution_panel, ReportPeriod $report_period, EventReportFormatter $event_report_formatter ) {
-		parent::__construct( $report_period, $event_report_formatter );
+	public function __construct( RequestActivityReport $request_activity_report, RequestActivityFilterInput $request_activity_filter_input, CountryDistributionPanel $country_distribution_panel, FilterFormRenderer $filter_form_renderer, RecordTablePanel $record_table_panel, ReportPeriod $report_period, EventReportFormatter $event_report_formatter ) {
+		parent::__construct( $report_period, $event_report_formatter, AdminMenu::page_tabs() );
 		$this->request_activity_report       = $request_activity_report;
 		$this->request_activity_filter_input = $request_activity_filter_input;
 		$this->country_distribution_panel    = $country_distribution_panel;
+		$this->filter_form_renderer          = $filter_form_renderer;
+		$this->record_table_panel            = $record_table_panel;
 	}
 
 	public function render(): void {
@@ -49,112 +57,110 @@ final class RequestHandlingPage extends AbstractAdminPage {
 
 			<?php $this->country_distribution_panel->render( $countries, 'Requests by Country', 'Requests' ); ?>
 
-			<div class="vwfw-panel vwfw-record-panel">
-				<?php $this->render_record_header( 'Request Log', 'This view includes frontend pages, login, admin, AJAX, REST API, XML-RPC, and wp-cron requests.', $total_items ); ?>
-				<?php echo wp_kses_post( $paginator->render() ); ?>
-				<div class="vwfw-record-table-wrap">
-					<table class="widefat striped fixed">
-						<thead>
-							<tr>
-								<th>Time</th>
-								<th>Request Type</th>
-								<th>Method</th>
-								<th>IP</th>
-								<th>Country</th>
-								<th>Frontend HTML</th>
-								<th>Request URI</th>
-								<th>User Agent</th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php if ( empty( $rows ) ) : ?>
-								<tr>
-									<td colspan="8">No requests found for this period.</td>
-								</tr>
-							<?php else : ?>
-								<?php foreach ( $rows as $row ) : ?>
-									<?php $details = $this->event_report_formatter->details_from_json( (string) ( $row['details'] ?? '' ) ); ?>
-									<tr>
-										<td><?php echo esc_html( $this->event_report_formatter->admin_datetime( (string) $row['created_at'] ) ); ?></td>
-										<td><?php echo esc_html( $this->event_report_formatter->request_type_label( (string) ( $details['request_type'] ?? '' ) ) ); ?></td>
-										<td><?php echo esc_html( (string) ( $details['method'] ?? '' ) ); ?></td>
-										<td><?php echo esc_html( (string) $row['ip_address'] ); ?></td>
-										<td><?php echo esc_html( trim( (string) $row['country_code'] . ' ' . (string) $row['country_name'] ) ); ?></td>
-										<td><?php echo esc_html( ! empty( $details['is_frontend_html'] ) ? 'Yes' : 'No' ); ?></td>
-										<td class="vwfw-break"><?php echo esc_html( (string) $row['request_uri'] ); ?></td>
-										<td class="vwfw-break"><?php echo esc_html( (string) $row['user_agent'] ); ?></td>
-									</tr>
-								<?php endforeach; ?>
-							<?php endif; ?>
-						</tbody>
-					</table>
-				</div>
-				<?php echo wp_kses_post( $paginator->render() ); ?>
-			</div>
+			<?php
+			$this->record_table_panel->render(
+				'Request Log',
+				'This view includes frontend pages, login, admin, AJAX, REST API, XML-RPC, and wp-cron requests.',
+				$total_items,
+				$paginator->render(),
+				array( 'Time', 'Request Type', 'Method', 'IP', 'Country', 'Frontend HTML', 'Request URI', 'User Agent' ),
+				$rows,
+				'No requests found for this period.',
+				'widefat striped fixed vwfw-request-log-table',
+				function ( array $row ): void {
+					$details = $this->event_report_formatter->details_from_json( (string) ( $row['details'] ?? '' ) );
+					?>
+					<td><?php echo esc_html( $this->event_report_formatter->admin_datetime( (string) $row['created_at'] ) ); ?></td>
+					<td><?php echo esc_html( $this->event_report_formatter->request_type_label( (string) ( $details['request_type'] ?? '' ) ) ); ?></td>
+					<td><?php echo esc_html( (string) ( $details['method'] ?? '' ) ); ?></td>
+					<td><?php echo esc_html( (string) $row['ip_address'] ); ?></td>
+					<td><?php echo esc_html( trim( (string) $row['country_code'] . ' ' . (string) $row['country_name'] ) ); ?></td>
+					<td><?php echo esc_html( ! empty( $details['is_frontend_html'] ) ? 'Yes' : 'No' ); ?></td>
+					<td class="vwfw-break"><?php echo esc_html( (string) $row['request_uri'] ); ?></td>
+					<td class="vwfw-break"><?php echo esc_html( (string) $row['user_agent'] ); ?></td>
+					<?php
+				}
+			);
+		?>
 		</div>
 		<?php
 	}
 
 	private function render_request_filters_form( array $filters, array $country_options ): void {
-		?>
-		<form class="vwfw-record-filters vwfw-panel" method="get">
-			<input type="hidden" name="page" value="openwpsecurity-firewall-request-handling">
-			<input type="hidden" name="period" value="<?php echo esc_attr( $this->current_period( 'all' ) ); ?>">
-			<div class="vwfw-filter-grid">
-				<div>
-					<label for="vwfw-request-type"><strong>Request Type</strong></label>
-					<select id="vwfw-request-type" name="request_type">
-						<?php foreach ( $this->event_report_formatter->request_type_options() as $value => $label ) : ?>
-							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $filters['request_type'], $value ); ?>>
-								<?php echo esc_html( $label ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</div>
-				<div>
-					<label for="vwfw-request-method"><strong>Method</strong></label>
-					<select id="vwfw-request-method" name="method">
-						<?php foreach ( $this->event_report_formatter->method_options() as $value => $label ) : ?>
-							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $filters['method'], $value ); ?>>
-								<?php echo esc_html( $label ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</div>
-				<div>
-					<label for="vwfw-country-code"><strong>Country</strong></label>
-					<select id="vwfw-country-code" name="country_code">
-						<option value="">All Countries</option>
-						<?php foreach ( $country_options as $country ) : ?>
-							<option value="<?php echo esc_attr( (string) $country['code'] ); ?>" <?php selected( $filters['country_code'], (string) $country['code'] ); ?>>
-								<?php echo esc_html( (string) $country['label'] ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</div>
-				<div>
-					<label for="vwfw-request-ip"><strong>IP Contains</strong></label>
-					<input id="vwfw-request-ip" type="text" name="ip_address" value="<?php echo esc_attr( $filters['ip_address'] ); ?>">
-				</div>
-				<div>
-					<label for="vwfw-request-uri"><strong>URI Contains</strong></label>
-					<input id="vwfw-request-uri" type="text" name="request_uri" value="<?php echo esc_attr( $filters['request_uri'] ); ?>">
-				</div>
-				<div>
-					<label for="vwfw-request-agent"><strong>User Agent Contains</strong></label>
-					<input id="vwfw-request-agent" type="text" name="user_agent" value="<?php echo esc_attr( $filters['user_agent'] ); ?>">
-				</div>
-				<div class="vwfw-filter-flags">
-					<label><input type="checkbox" name="external_only" value="1" <?php checked( ! empty( $filters['external_only'] ) ); ?>> External only</label>
-					<label><input type="checkbox" name="exclude_internal" value="1" <?php checked( ! empty( $filters['exclude_internal'] ) ); ?>> Hide admin/ajax/cron</label>
-					<label><input type="checkbox" name="exclude_my_ip" value="1" <?php checked( ! empty( $filters['exclude_my_ip'] ) ); ?>> Exclude my IP</label>
-				</div>
-				<div class="vwfw-filter-actions">
-					<button type="submit" class="button button-primary">Apply Filters</button>
-					<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=openwpsecurity-firewall-request-handling&period=' . $this->current_period( 'all' ) ) ); ?>">Reset</a>
-				</div>
-			</div>
-		</form>
-		<?php
+		$country_select_options = array( '' => 'All Countries' );
+
+		foreach ( $country_options as $country ) {
+			$country_select_options[ (string) $country['code'] ] = (string) $country['label'];
+		}
+
+		$this->filter_form_renderer->render(
+			'openwpsecurity-firewall-request-handling',
+			$this->current_period( 'all' ),
+			array(
+				array(
+					'type'    => 'select',
+					'id'      => 'vwfw-request-type',
+					'name'    => 'request_type',
+					'label'   => 'Request Type',
+					'value'   => $filters['request_type'],
+					'options' => $this->event_report_formatter->request_type_options(),
+				),
+				array(
+					'type'    => 'select',
+					'id'      => 'vwfw-request-method',
+					'name'    => 'method',
+					'label'   => 'Method',
+					'value'   => $filters['method'],
+					'options' => $this->event_report_formatter->method_options(),
+				),
+				array(
+					'type'    => 'select',
+					'id'      => 'vwfw-country-code',
+					'name'    => 'country_code',
+					'label'   => 'Country',
+					'value'   => $filters['country_code'],
+					'options' => $country_select_options,
+				),
+				array(
+					'id'    => 'vwfw-request-ip',
+					'name'  => 'ip_address',
+					'label' => 'IP Contains',
+					'value' => $filters['ip_address'],
+				),
+				array(
+					'id'    => 'vwfw-request-uri',
+					'name'  => 'request_uri',
+					'label' => 'URI Contains',
+					'value' => $filters['request_uri'],
+				),
+				array(
+					'id'    => 'vwfw-request-agent',
+					'name'  => 'user_agent',
+					'label' => 'User Agent Contains',
+					'value' => $filters['user_agent'],
+				),
+				array(
+					'type'    => 'checkboxes',
+					'choices' => array(
+						array(
+							'name'    => 'external_only',
+							'label'   => 'External only',
+							'checked' => ! empty( $filters['external_only'] ),
+						),
+						array(
+							'name'    => 'exclude_internal',
+							'label'   => 'Hide admin/ajax/cron',
+							'checked' => ! empty( $filters['exclude_internal'] ),
+						),
+						array(
+							'name'    => 'exclude_my_ip',
+							'label'   => 'Exclude my IP',
+							'checked' => ! empty( $filters['exclude_my_ip'] ),
+						),
+					),
+				),
+			),
+			admin_url( 'admin.php?page=openwpsecurity-firewall-request-handling&period=' . $this->current_period( 'all' ) )
+		);
 	}
 }

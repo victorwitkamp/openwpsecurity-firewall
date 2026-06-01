@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Security;
 
+use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 use VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics\RequestDebugState;
-use VictorWitkamp\OpenWPSecurity\Firewall\Http\RequestContext;
-use VictorWitkamp\OpenWPSecurity\Firewall\Http\Response\RequestDenialResponder;
+use VictorWitkamp\OpenWPSecurity\Core\Http\RequestContext;
+use VictorWitkamp\OpenWPSecurity\Core\Http\Response\RequestDenialResponder;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventLogger;
-use VictorWitkamp\OpenWPSecurity\Firewall\Security\Ban\PermanentBanStore;
+use VictorWitkamp\OpenWPSecurity\Core\Security\Ban\PermanentBanStore;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\Captcha\CaptchaGuard;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\FrontendPageVisitLogger;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestHandlingEnforcer;
@@ -18,6 +19,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class RequestGuard {
+	private const LOGINPROTECTION_BANS_OPTION_NAME = 'openwpsecurity_loginprotection_permanent_bans';
+
+	private Settings $settings;
 	private PermanentBanStore $ban_store;
 	private EventLogger $event_logger;
 	private RequestHandlingEnforcer $request_handling_enforcer;
@@ -28,7 +32,8 @@ final class RequestGuard {
 	private CaptchaGuard $captcha_guard;
 	private bool $request_logged = false;
 
-	public function __construct( PermanentBanStore $ban_store, EventLogger $event_logger, RequestHandlingEnforcer $request_handling_enforcer, RequestDenialResponder $denial_responder, RequestDebugState $debug_state, RequestContext $request_context, FrontendPageVisitLogger $frontend_page_visit_logger, CaptchaGuard $captcha_guard ) {
+	public function __construct( Settings $settings, PermanentBanStore $ban_store, EventLogger $event_logger, RequestHandlingEnforcer $request_handling_enforcer, RequestDenialResponder $denial_responder, RequestDebugState $debug_state, RequestContext $request_context, FrontendPageVisitLogger $frontend_page_visit_logger, CaptchaGuard $captcha_guard ) {
+		$this->settings                   = $settings;
 		$this->ban_store                  = $ban_store;
 		$this->event_logger               = $event_logger;
 		$this->request_handling_enforcer  = $request_handling_enforcer;
@@ -94,19 +99,29 @@ final class RequestGuard {
 		}
 
 		$ip  = $this->get_ip();
-		$ban = $this->ban_store->get_ban_for_ip( $ip );
+		$ban = $this->get_enforced_ban_for_ip( $ip );
 
 		if ( array() === $ban ) {
 			return;
 		}
 
 		$this->captcha_guard->update_debug_snapshot( $ip, $this->request_context->current_request_type() );
+		$this->debug_state->merge(
+			'ban',
+			array(
+				'is_banned'       => true,
+				'banned_at'       => (string) ( $ban['banned_at'] ?? '' ),
+				'source'          => (string) ( $ban['source'] ?? '' ),
+				'reason'          => (string) ( $ban['reason'] ?? '' ),
+				'enforced_source' => (string) ( $ban['enforced_source'] ?? '' ),
+			)
+		);
 		$this->debug_state->add_condition( 'Permanent ban matched before content rendering.' );
 		$this->denial_responder->deny_permanently(
 			$ip,
 			$this->request_context->current_request_type(),
 			'Access permanently blocked',
-			'This IP address has been permanently banned by OpenWPSecurity - Firewall.',
+			$this->permanent_ban_message( $ban ),
 			'All page views, login attempts, admin requests, AJAX calls, REST API requests, XML-RPC requests, and cron requests are blocked.'
 		);
 	}
@@ -133,5 +148,38 @@ final class RequestGuard {
 
 	private function get_ip(): string {
 		return $this->request_context->current_ip();
+	}
+
+	private function get_enforced_ban_for_ip( string $ip ): array {
+		$ban = $this->ban_store->get_ban_for_ip( $ip );
+
+		if ( array() !== $ban ) {
+			$ban['enforced_source'] = 'firewall';
+			return $ban;
+		}
+
+		if ( empty( $this->settings->get()['enforce_loginprotection_bans'] ) ) {
+			return array();
+		}
+
+		$bans = get_option( self::LOGINPROTECTION_BANS_OPTION_NAME, array() );
+		$bans = is_array( $bans ) ? $bans : array();
+
+		if ( empty( $bans[ $ip ] ) || ! is_array( $bans[ $ip ] ) ) {
+			return array();
+		}
+
+		$ban                    = $bans[ $ip ];
+		$ban['enforced_source'] = 'login_protection';
+
+		return $ban;
+	}
+
+	private function permanent_ban_message( array $ban ): string {
+		if ( 'login_protection' === (string) ( $ban['enforced_source'] ?? '' ) ) {
+			return 'This IP address has been permanently banned by OpenWPSecurity - Login Protection and is being enforced globally by OpenWPSecurity - Firewall.';
+		}
+
+		return 'This IP address has been permanently banned by OpenWPSecurity - Firewall.';
 	}
 }

@@ -14,6 +14,8 @@ final class RequestHandlingCatalog {
 			'rate_limit_enabled',
 			'rate_limit_threshold',
 			'rate_limit_window_seconds',
+			'active_block_denials_before_permanent_ban',
+			'captcha_challenges_before_temporary_block',
 		);
 	}
 
@@ -54,31 +56,43 @@ final class RequestHandlingCatalog {
 				'rate_limit_enabled'        => 1,
 				'rate_limit_threshold'      => 12,
 				'rate_limit_window_seconds' => 60,
+				'active_block_denials_before_permanent_ban' => 20,
+				'captcha_challenges_before_temporary_block' => 40,
 			),
 			'wp_login'      => array(
 				'rate_limit_enabled'        => 1,
 				'rate_limit_threshold'      => 8,
 				'rate_limit_window_seconds' => 300,
+				'active_block_denials_before_permanent_ban' => 20,
+				'captcha_challenges_before_temporary_block' => 25,
 			),
 			'admin_ajax'    => array(
 				'rate_limit_enabled'        => 1,
 				'rate_limit_threshold'      => 20,
 				'rate_limit_window_seconds' => 60,
+				'active_block_denials_before_permanent_ban' => 20,
+				'captcha_challenges_before_temporary_block' => 0,
 			),
 			'rest_api'      => array(
 				'rate_limit_enabled'        => 1,
 				'rate_limit_threshold'      => 15,
 				'rate_limit_window_seconds' => 60,
+				'active_block_denials_before_permanent_ban' => 20,
+				'captcha_challenges_before_temporary_block' => 0,
 			),
 			'xmlrpc'        => array(
 				'rate_limit_enabled'        => 1,
 				'rate_limit_threshold'      => 5,
 				'rate_limit_window_seconds' => 300,
+				'active_block_denials_before_permanent_ban' => 10,
+				'captcha_challenges_before_temporary_block' => 0,
 			),
 			'wp_cron'       => array(
 				'rate_limit_enabled'        => 1,
 				'rate_limit_threshold'      => 6,
 				'rate_limit_window_seconds' => 300,
+				'active_block_denials_before_permanent_ban' => 20,
+				'captcha_challenges_before_temporary_block' => 0,
 			),
 		);
 	}

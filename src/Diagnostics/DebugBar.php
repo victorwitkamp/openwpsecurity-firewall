@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics;
 
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\EventReportFormatter;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\EventReportFormatter;
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -215,6 +215,8 @@ final class DebugBar {
 			'Temporary Block Triggered By' => ! empty( $request_handling['temporary_block_trigger_request_type'] ) ? $this->event_display_formatter->request_type_label( (string) $request_handling['temporary_block_trigger_request_type'] ) : '',
 			'Block Duration'               => isset( $request_handling['temporary_block_minutes'] ) ? (int) $request_handling['temporary_block_minutes'] . ' min' : '',
 			'Blocks'                       => isset( $request_handling['temporary_block_count'], $request_handling['temporary_blocks_before_permanent_ban'] ) ? (int) $request_handling['temporary_block_count'] . ' / ' . (int) $request_handling['temporary_blocks_before_permanent_ban'] : '',
+			'Active Block Denials'         => isset( $request_handling['active_block_denial_count'], $request_handling['active_block_denials_before_permanent_ban'] ) ? (int) $request_handling['active_block_denial_count'] . ' / ' . (int) $request_handling['active_block_denials_before_permanent_ban'] : '',
+			'Captcha Challenge Pages'      => isset( $request_handling['captcha_challenge_count'], $request_handling['captcha_challenges_before_temporary_block'] ) ? (int) $request_handling['captcha_challenge_count'] . ' / ' . (int) $request_handling['captcha_challenges_before_temporary_block'] : '',
 			'Handling Status'              => (string) ( $request_handling['status'] ?? '' ),
 		);
 	}

@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Admin\Pages;
 
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Pages\AbstractAdminPage;
 use VictorWitkamp\OpenWPSecurity\Core\Admin\Presentation\CountryDistributionPanel;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Presentation\FilterFormRenderer;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Presentation\RecordTablePanel;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\EventReportFormatter;
 use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\ReportPeriod;
+use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Navigation\AdminMenu;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Requests\SecurityIncidentFilterInput;
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\EventReportFormatter;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\Reports\SecurityIncidentReport;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,17 +19,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class SecurityIncidentsPage extends AbstractAdminPage {
-	private const PER_PAGE = 50;
+	private const PER_PAGE = 25;
 
 	private SecurityIncidentReport $security_incident_report;
 	private SecurityIncidentFilterInput $security_incident_filter_input;
 	private CountryDistributionPanel $country_distribution_panel;
+	private FilterFormRenderer $filter_form_renderer;
+	private RecordTablePanel $record_table_panel;
 
-	public function __construct( SecurityIncidentReport $security_incident_report, SecurityIncidentFilterInput $security_incident_filter_input, CountryDistributionPanel $country_distribution_panel, ReportPeriod $report_period, EventReportFormatter $event_report_formatter ) {
-		parent::__construct( $report_period, $event_report_formatter );
+	public function __construct( SecurityIncidentReport $security_incident_report, SecurityIncidentFilterInput $security_incident_filter_input, CountryDistributionPanel $country_distribution_panel, FilterFormRenderer $filter_form_renderer, RecordTablePanel $record_table_panel, ReportPeriod $report_period, EventReportFormatter $event_report_formatter ) {
+		parent::__construct( $report_period, $event_report_formatter, AdminMenu::page_tabs() );
 		$this->security_incident_report       = $security_incident_report;
 		$this->security_incident_filter_input = $security_incident_filter_input;
 		$this->country_distribution_panel     = $country_distribution_panel;
+		$this->filter_form_renderer           = $filter_form_renderer;
+		$this->record_table_panel             = $record_table_panel;
 	}
 
 	public function render(): void {
@@ -48,104 +56,85 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 
 			<?php $this->country_distribution_panel->render( $countries, 'Security Incidents by Country', 'Incidents' ); ?>
 
-			<div class="vwfw-panel vwfw-record-panel">
-				<?php $this->render_record_header( 'Security Incidents', 'Firewall interventions and challenge events from Request Handling and Captcha, separate from Login Protection activity.', $total_items ); ?>
-				<?php echo wp_kses_post( $paginator->render() ); ?>
-				<div class="vwfw-record-table-wrap">
-					<table class="widefat striped fixed">
-						<thead>
-							<tr>
-								<th>Time</th>
-								<th>Type</th>
-								<th>IP</th>
-								<th>Country</th>
-								<th>Request Type</th>
-								<th>Lockout Expires</th>
-								<th>Details</th>
-								<th>Request URI</th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php if ( empty( $rows ) ) : ?>
-								<tr>
-									<td colspan="8">No security incidents found for this period.</td>
-								</tr>
-							<?php else : ?>
-								<?php foreach ( $rows as $row ) : ?>
-									<?php $details = $this->event_report_formatter->details_from_json( (string) ( $row['details'] ?? '' ) ); ?>
-									<tr>
-										<td><?php echo esc_html( $this->event_report_formatter->admin_datetime( (string) $row['created_at'] ) ); ?></td>
-										<td><?php echo esc_html( $this->event_report_formatter->event_type_label( (string) $row['event_type'] ) ); ?></td>
-										<td><?php echo esc_html( (string) $row['ip_address'] ); ?></td>
-										<td><?php echo esc_html( trim( ( (string) $row['country_code'] ) . ' ' . ( (string) $row['country_name'] ) ) ); ?></td>
-										<td><?php echo esc_html( $this->incident_request_type_label( $details ) ); ?></td>
-										<td><?php echo esc_html( $row['lockout_expires_at'] ? $this->event_report_formatter->admin_datetime( (string) $row['lockout_expires_at'] ) : '' ); ?></td>
-										<td class="vwfw-break"><?php echo esc_html( $this->format_incident_details( (string) $row['event_type'], $details ) ); ?></td>
-										<td class="vwfw-break"><?php echo esc_html( (string) $row['request_uri'] ); ?></td>
-									</tr>
-								<?php endforeach; ?>
-							<?php endif; ?>
-						</tbody>
-					</table>
-				</div>
-				<?php echo wp_kses_post( $paginator->render() ); ?>
-			</div>
+			<?php
+			$this->record_table_panel->render(
+				'Security Incidents',
+				'Firewall interventions and challenge events from Request Handling and Captcha, separate from Login Protection activity.',
+				$total_items,
+				$paginator->render(),
+				array( 'Time', 'Type', 'IP', 'Country', 'Request Type', 'Lockout Expires', 'Details', 'Request URI' ),
+				$rows,
+				'No security incidents found for this period.',
+				'widefat striped fixed vwfw-incident-table',
+				function ( array $row ): void {
+					$details = $this->event_report_formatter->details_from_json( (string) ( $row['details'] ?? '' ) );
+					?>
+					<td><?php echo esc_html( $this->event_report_formatter->admin_datetime( (string) $row['created_at'] ) ); ?></td>
+					<td><?php echo esc_html( $this->event_report_formatter->event_type_label( (string) $row['event_type'] ) ); ?></td>
+					<td><?php echo esc_html( (string) $row['ip_address'] ); ?></td>
+					<td><?php echo esc_html( trim( ( (string) $row['country_code'] ) . ' ' . ( (string) $row['country_name'] ) ) ); ?></td>
+					<td><?php echo esc_html( $this->incident_request_type_label( $details ) ); ?></td>
+					<td><?php echo esc_html( $row['lockout_expires_at'] ? $this->event_report_formatter->admin_datetime( (string) $row['lockout_expires_at'] ) : '' ); ?></td>
+					<td class="vwfw-break"><?php echo esc_html( $this->format_incident_details( (string) $row['event_type'], $details ) ); ?></td>
+					<td class="vwfw-break"><?php echo esc_html( (string) $row['request_uri'] ); ?></td>
+					<?php
+				}
+			);
+		?>
 		</div>
 		<?php
 	}
 
 	private function render_filters_form( array $filters, array $country_options ): void {
-		?>
-		<form class="vwfw-record-filters vwfw-panel" method="get">
-			<input type="hidden" name="page" value="openwpsecurity-firewall-security">
-			<input type="hidden" name="period" value="<?php echo esc_attr( $this->current_period( 'all' ) ); ?>">
-			<div class="vwfw-filter-grid">
-				<div>
-					<label for="vwfw-incident-event-type"><strong>Event Type</strong></label>
-					<select id="vwfw-incident-event-type" name="event_type">
-						<?php foreach ( $this->event_report_formatter->event_type_options( $this->security_incident_filter_input->event_types() ) as $value => $label ) : ?>
-							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $filters['event_type'], $value ); ?>>
-								<?php echo esc_html( $label ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</div>
-				<div>
-					<label for="vwfw-incident-request-type"><strong>Request Type</strong></label>
-					<select id="vwfw-incident-request-type" name="request_type">
-						<?php foreach ( $this->event_report_formatter->request_type_options() as $value => $label ) : ?>
-							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $filters['request_type'], $value ); ?>>
-								<?php echo esc_html( $label ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</div>
-				<div>
-					<label for="vwfw-incident-country"><strong>Country</strong></label>
-					<select id="vwfw-incident-country" name="country_code">
-						<option value="">All Countries</option>
-						<?php foreach ( $country_options as $country ) : ?>
-							<option value="<?php echo esc_attr( (string) $country['code'] ); ?>" <?php selected( $filters['country_code'], (string) $country['code'] ); ?>>
-								<?php echo esc_html( (string) $country['label'] ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-				</div>
-				<div>
-					<label for="vwfw-incident-ip"><strong>IP Contains</strong></label>
-					<input id="vwfw-incident-ip" type="text" name="ip_address" value="<?php echo esc_attr( $filters['ip_address'] ); ?>">
-				</div>
-				<div>
-					<label for="vwfw-incident-uri"><strong>URI Contains</strong></label>
-					<input id="vwfw-incident-uri" type="text" name="request_uri" value="<?php echo esc_attr( $filters['request_uri'] ); ?>">
-				</div>
-				<div class="vwfw-filter-actions">
-					<button type="submit" class="button button-primary">Apply Filters</button>
-					<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=openwpsecurity-firewall-security&period=' . $this->current_period( 'all' ) ) ); ?>">Reset</a>
-				</div>
-			</div>
-		</form>
-		<?php
+		$country_select_options = array( '' => 'All Countries' );
+
+		foreach ( $country_options as $country ) {
+			$country_select_options[ (string) $country['code'] ] = (string) $country['label'];
+		}
+
+		$this->filter_form_renderer->render(
+			'openwpsecurity-firewall-security',
+			$this->current_period( 'all' ),
+			array(
+				array(
+					'type'    => 'select',
+					'id'      => 'vwfw-incident-event-type',
+					'name'    => 'event_type',
+					'label'   => 'Event Type',
+					'value'   => $filters['event_type'],
+					'options' => $this->event_report_formatter->event_type_options( $this->security_incident_filter_input->event_types() ),
+				),
+				array(
+					'type'    => 'select',
+					'id'      => 'vwfw-incident-request-type',
+					'name'    => 'request_type',
+					'label'   => 'Request Type',
+					'value'   => $filters['request_type'],
+					'options' => $this->event_report_formatter->request_type_options(),
+				),
+				array(
+					'type'    => 'select',
+					'id'      => 'vwfw-incident-country',
+					'name'    => 'country_code',
+					'label'   => 'Country',
+					'value'   => $filters['country_code'],
+					'options' => $country_select_options,
+				),
+				array(
+					'id'    => 'vwfw-incident-ip',
+					'name'  => 'ip_address',
+					'label' => 'IP Contains',
+					'value' => $filters['ip_address'],
+				),
+				array(
+					'id'    => 'vwfw-incident-uri',
+					'name'  => 'request_uri',
+					'label' => 'URI Contains',
+					'value' => $filters['request_uri'],
+				),
+			),
+			admin_url( 'admin.php?page=openwpsecurity-firewall-security&period=' . $this->current_period( 'all' ) )
+		);
 	}
 
 	private function incident_request_type_label( array $details ): string {
@@ -158,12 +147,22 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 
 	private function format_incident_details( string $event_type, array $details ): string {
 		if ( 'captcha_required' === $event_type ) {
-			return sprintf(
+			$message = sprintf(
 				'Rate limit reached on %s at %d hits in %d seconds. A shared captcha challenge was rendered.',
 				$this->event_report_formatter->request_type_label( (string) ( $details['request_type'] ?? '' ) ),
 				(int) ( $details['hit_count'] ?? 0 ),
 				(int) ( $details['rate_limit_window_seconds'] ?? 0 )
 			);
+
+			if ( isset( $details['captcha_challenge_count'], $details['captcha_challenges_before_temporary_block'] ) && (int) $details['captcha_challenges_before_temporary_block'] > 0 ) {
+				$message .= sprintf(
+					' Unsolved challenge pages: %d/%d.',
+					(int) $details['captcha_challenge_count'],
+					(int) $details['captcha_challenges_before_temporary_block']
+				);
+			}
+
+			return $message;
 		}
 
 		if ( 'captcha_failed' === $event_type ) {
@@ -184,6 +183,22 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 
 		if ( 'permanent_ban_created' === $event_type ) {
 			if ( 'request_handling' === (string) ( $details['source'] ?? '' ) ) {
+				if ( 'active_temporary_block_denials' === (string) ( $details['reason'] ?? '' ) ) {
+					return sprintf(
+						'Request handling permanently banned this IP after %d denied request(s) during an active temporary block triggered by %s.',
+						(int) ( $details['active_block_denial_count'] ?? 0 ),
+						$this->event_report_formatter->request_type_label( (string) ( $details['trigger_request_type'] ?? '' ) )
+					);
+				}
+
+				if ( 'captcha_challenge_volume' === (string) ( $details['reason'] ?? '' ) ) {
+					return sprintf(
+						'Request handling permanently banned this IP after repeated unsolved captcha challenge pages on %s and %d temporary block(s).',
+						$this->event_report_formatter->request_type_label( (string) ( $details['request_type'] ?? '' ) ),
+						(int) ( $details['temporary_block_count'] ?? 0 )
+					);
+				}
+
 				return sprintf(
 					'%s via request handling on %s after %d temporary block(s).',
 					(string) ( $details['reason'] ?? 'Permanent ban created' ),
@@ -247,6 +262,25 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 				return $message;
 			}
 
+			if ( 'captcha_challenge_volume' === (string) ( $details['reason'] ?? '' ) ) {
+				$message = sprintf(
+					'%d unsolved captcha challenge page(s) in %d seconds created a global temporary block for %d minute(s).',
+					(int) ( $details['captcha_challenge_count'] ?? 0 ),
+					(int) ( $details['captcha_challenge_window_seconds'] ?? 0 ),
+					(int) ( $details['temporary_block_minutes'] ?? 0 )
+				);
+
+				if ( isset( $details['temporary_block_count'] ) && isset( $details['temporary_blocks_before_permanent_ban'] ) ) {
+					$message .= sprintf(
+						' Temporary blocks: %d/%d.',
+						(int) $details['temporary_block_count'],
+						(int) $details['temporary_blocks_before_permanent_ban']
+					);
+				}
+
+				return $message;
+			}
+
 			$message = sprintf(
 				'%d hits in %d seconds against a threshold of %d created a global temporary block for %d minute(s).',
 				(int) ( $details['hit_count'] ?? 0 ),
@@ -271,6 +305,14 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 
 			if ( ! empty( $details['trigger_request_type'] ) ) {
 				$message .= ' Triggered by ' . $this->event_report_formatter->request_type_label( (string) $details['trigger_request_type'] ) . '.';
+			}
+
+			if ( isset( $details['active_block_denial_count'], $details['active_block_denials_before_permanent_ban'] ) && (int) $details['active_block_denials_before_permanent_ban'] > 0 ) {
+				$message .= sprintf(
+					' Active-block denials: %d/%d.',
+					(int) $details['active_block_denial_count'],
+					(int) $details['active_block_denials_before_permanent_ban']
+				);
 			}
 
 			return $message;

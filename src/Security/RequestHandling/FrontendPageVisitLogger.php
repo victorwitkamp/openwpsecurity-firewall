@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling;
 
 use VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics\RequestDebugState;
-use VictorWitkamp\OpenWPSecurity\Firewall\Http\RequestContext;
+use VictorWitkamp\OpenWPSecurity\Core\Http\RequestContext;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventLogger;
 
 if ( ! defined( 'ABSPATH' ) ) {

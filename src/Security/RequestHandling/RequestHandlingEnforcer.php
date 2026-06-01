@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling;
 
+use VictorWitkamp\OpenWPSecurity\Core\Http\RequestContext;
+use VictorWitkamp\OpenWPSecurity\Core\Http\Response\RequestDenialResponder;
 use VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics\RequestDebugState;
-use VictorWitkamp\OpenWPSecurity\Firewall\Http\RequestContext;
-use VictorWitkamp\OpenWPSecurity\Firewall\Http\Response\RequestDenialResponder;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventLogger;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\Captcha\CaptchaGuard;
 
@@ -274,6 +274,17 @@ final class RequestHandlingEnforcer {
 	}
 
 	private function deny_active_temporary_block( string $ip, string $request_type, array $active_temporary_block, int $temporary_block_count, array $temporary_block_settings ): void {
+		$active_temporary_block = $this->request_temporary_block_store->record_active_temporary_block_denial( $ip, $request_type );
+
+		if ( array() === $active_temporary_block ) {
+			return;
+		}
+
+		$trigger_request_type                      = (string) ( $active_temporary_block['trigger_request_type'] ?? '' );
+		$trigger_request_type                      = '' !== $trigger_request_type ? $trigger_request_type : $request_type;
+		$active_block_denial_count                 = (int) ( $active_temporary_block['denial_count'] ?? 0 );
+		$active_block_denials_before_permanent_ban = $this->request_handling_resolver->active_block_denials_before_permanent_ban( $trigger_request_type );
+
 		$this->event_logger->log(
 			'request_temporarily_blocked',
 			$ip,
@@ -281,11 +292,13 @@ final class RequestHandlingEnforcer {
 			array(
 				'lockout_expires_at' => gmdate( 'Y-m-d H:i:s', (int) $active_temporary_block['expires_at'] ),
 				'details'            => array(
-					'request_type'          => $request_type,
-					'trigger_request_type'  => (string) ( $active_temporary_block['trigger_request_type'] ?? '' ),
-					'reason'                => 'active_temporary_block',
-					'temporary_block_count' => $temporary_block_count,
+					'request_type'              => $request_type,
+					'trigger_request_type'      => $trigger_request_type,
+					'reason'                    => 'active_temporary_block',
+					'temporary_block_count'     => $temporary_block_count,
 					'temporary_blocks_before_permanent_ban' => (int) $temporary_block_settings['blocks_before_permanent_ban'],
+					'active_block_denial_count' => $active_block_denial_count,
+					'active_block_denials_before_permanent_ban' => $active_block_denials_before_permanent_ban,
 				),
 			)
 		);
@@ -295,12 +308,36 @@ final class RequestHandlingEnforcer {
 			array(
 				'temporary_block_active'               => true,
 				'temporary_block_expires_at'           => gmdate( 'Y-m-d H:i:s', (int) $active_temporary_block['expires_at'] ),
-				'temporary_block_trigger_request_type' => (string) ( $active_temporary_block['trigger_request_type'] ?? '' ),
+				'temporary_block_trigger_request_type' => $trigger_request_type,
 				'temporary_block_count'                => $temporary_block_count,
+				'active_block_denial_count'            => $active_block_denial_count,
+				'active_block_denials_before_permanent_ban' => $active_block_denials_before_permanent_ban,
 				'status'                               => 'A global request-handling temporary block is still active.',
 			)
 		);
 		$this->debug_state->add_condition( 'Request handling matched an active temporary block.' );
+
+		if ( $this->request_temporary_block_creator->create_permanent_ban_after_active_temporary_block_denials( $ip, $request_type, $trigger_request_type, $active_block_denial_count, $active_block_denials_before_permanent_ban, $temporary_block_count ) ) {
+			$this->request_temporary_block_store->clear_active_temporary_block( $ip );
+			$this->write_request_handling_debug(
+				$request_type,
+				array(
+					'temporary_block_active'    => false,
+					'active_block_denial_count' => $active_block_denial_count,
+					'active_block_denials_before_permanent_ban' => $active_block_denials_before_permanent_ban,
+					'status'                    => 'Permanent ban created after repeated requests during an active temporary block.',
+				)
+			);
+			$this->debug_state->add_condition( 'Request handling created a permanent ban during an active temporary block.' );
+			$this->denial_responder->deny_permanently(
+				$ip,
+				$request_type,
+				'Access permanently blocked',
+				'This IP address has been permanently banned after repeated requests during an active temporary block.',
+				'All request types are now blocked for this IP address.'
+			);
+		}
+
 		$this->denial_responder->deny_temporarily(
 			$ip,
 			$request_type,

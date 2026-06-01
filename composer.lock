@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "42a8e4ce7755a5d50dfdaabfae20beda",
+    "content-hash": "e0222fdcc2d490e4a33d375a9961327d",
     "packages": [
         {
             "name": "laminas/laminas-diactoros",
@@ -224,16 +224,17 @@
         },
         {
             "name": "openwpsecurity/core",
-            "version": "0.1.1",
+            "version": "0.2.0",
             "dist": {
                 "type": "path",
                 "url": "../openwpsecurity-core",
-                "reference": "73bb5118686fa455619fa8e811da72172e23f995"
+                "reference": "78459d2e478d3a2cae1903339719f3105e413b2b"
             },
             "require": {
                 "laminas/laminas-diactoros": "^3.8",
                 "laminas/laminas-httphandlerrunner": "^2.13",
-                "php": ">=8.2"
+                "php": ">=8.2",
+                "php-di/php-di": "^7.0"
             },
             "require-dev": {
                 "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
@@ -281,6 +282,12 @@
                 "issues": "https://github.com/victorwitkamp/openwpsecurity-core/issues",
                 "source": "https://github.com/victorwitkamp/openwpsecurity-core"
             },
+            "funding": [
+                {
+                    "type": "github",
+                    "url": "https://github.com/sponsors/victorwitkamp"
+                }
+            ],
             "transport-options": {
                 "symlink": true,
                 "relative": true

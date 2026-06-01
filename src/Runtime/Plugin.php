@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Runtime;
 
+use VictorWitkamp\OpenWPSecurity\Core\Runtime\PluginLifecycle;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Navigation\AdminMenu;
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 use VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics\DebugBar;
-use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventRetention;
+use VictorWitkamp\OpenWPSecurity\Core\Logging\EventRetention;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventSchema;
-use VictorWitkamp\OpenWPSecurity\Firewall\Security\Ban\PermanentBanStore;
+use VictorWitkamp\OpenWPSecurity\Core\Security\Ban\PermanentBanStore;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestGuard;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestTemporaryBlockStore;
 
@@ -17,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-final class Plugin {
+final class Plugin implements PluginLifecycle {
 	private Settings $settings;
 	private EventSchema $event_schema;
 	private EventRetention $event_retention;

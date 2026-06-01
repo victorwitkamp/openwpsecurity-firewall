@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Security\Captcha;
 
+use VictorWitkamp\OpenWPSecurity\Core\Http\RequestContext;
+use VictorWitkamp\OpenWPSecurity\Core\Http\Response\RequestDenialResponder;
+use VictorWitkamp\OpenWPSecurity\Core\Http\Response\ResponseDispatcher;
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 use VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics\RequestDebugState;
-use VictorWitkamp\OpenWPSecurity\Firewall\Http\RequestContext;
-use VictorWitkamp\OpenWPSecurity\Core\Http\Response\ResponseDispatcher;
-use VictorWitkamp\OpenWPSecurity\Firewall\Http\Response\RequestDenialResponder;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventLogger;
 use VictorWitkamp\OpenWPSecurity\Firewall\Runtime\TransientKeyBuilder;
-use VictorWitkamp\OpenWPSecurity\Firewall\Security\Ban\PermanentBanStore;
+use VictorWitkamp\OpenWPSecurity\Core\Security\Ban\PermanentBanStore;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestHandlingCatalog;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestTemporaryBlockCreator;
 
@@ -124,6 +124,10 @@ final class CaptchaGuard {
 			return;
 		}
 
+		$challenge_threshold    = $this->captcha_challenges_before_temporary_block( $request_type );
+		$challenge_state        = $this->record_captcha_challenge( $ip, $request_type, $rate_limit_window_seconds );
+		$create_temporary_block = $this->should_create_temporary_block_after_challenges( $challenge_state['count'], $challenge_threshold );
+
 		$this->event_logger->log(
 			'request_rate_limited',
 			$ip,
@@ -134,10 +138,69 @@ final class CaptchaGuard {
 					'hit_count'                 => $hit_count,
 					'rate_limit_threshold'      => $rate_limit_threshold,
 					'rate_limit_window_seconds' => $rate_limit_window_seconds,
-					'response_action'           => 'captcha_page',
+					'response_action'           => $create_temporary_block ? 'temporary_block' : 'captcha_page',
+					'captcha_challenge_count'   => $challenge_state['count'],
+					'captcha_challenges_before_temporary_block' => $challenge_threshold,
 				),
 			)
 		);
+
+		if ( $create_temporary_block ) {
+			$result = $this->request_temporary_block_creator->create_from_captcha_challenge_volume(
+				$ip,
+				$request_type,
+				$challenge_state['count'],
+				$challenge_threshold,
+				$rate_limit_window_seconds
+			);
+
+			$this->clear_captcha_challenges( $ip, $request_type );
+
+			if ( ! empty( $result['permanent_ban_created'] ) ) {
+				$this->debug_state->merge(
+					'request_handling',
+					array(
+						'temporary_block_active'     => true,
+						'temporary_block_expires_at' => gmdate( 'Y-m-d H:i:s', (int) $result['temporary_block']['expires_at'] ),
+						'temporary_block_trigger_request_type' => $request_type,
+						'temporary_block_count'      => (int) $result['temporary_block_count'],
+						'captcha_challenge_count'    => $challenge_state['count'],
+						'captcha_challenges_before_temporary_block' => $challenge_threshold,
+						'status'                     => 'Repeated unsolved captcha challenges created a temporary block and then escalated into a permanent ban.',
+					)
+				);
+				$this->debug_state->add_condition( 'Permanent ban created because repeated captcha challenges caused repeated temporary blocks.' );
+				$this->denial_responder->deny_permanently(
+					$ip,
+					$request_type,
+					'Access permanently blocked',
+					'This IP address has been permanently banned after repeated unsolved captcha challenges and temporary blocks.',
+					'All request types are now blocked for this IP address.'
+				);
+			}
+
+			$this->debug_state->merge(
+				'request_handling',
+				array(
+					'temporary_block_active'               => true,
+					'temporary_block_expires_at'           => gmdate( 'Y-m-d H:i:s', (int) $result['temporary_block']['expires_at'] ),
+					'temporary_block_trigger_request_type' => $request_type,
+					'temporary_block_count'                => (int) $result['temporary_block_count'],
+					'captcha_challenge_count'              => $challenge_state['count'],
+					'captcha_challenges_before_temporary_block' => $challenge_threshold,
+					'status'                               => 'Repeated unsolved captcha challenges created a global request-handling temporary block.',
+				)
+			);
+			$this->debug_state->add_condition( 'Repeated unsolved captcha challenges created a global temporary block.' );
+			$this->denial_responder->deny_temporarily(
+				$ip,
+				$request_type,
+				(int) $result['temporary_block']['expires_at'],
+				403,
+				'Access temporarily blocked',
+				'Too many captcha challenges were requested without being solved. Access is temporarily blocked across all request types.'
+			);
+		}
 
 		$this->event_logger->log(
 			'captcha_required',
@@ -151,6 +214,8 @@ final class CaptchaGuard {
 					'rate_limit_window_seconds'      => $rate_limit_window_seconds,
 					'captcha_failure_threshold'      => (int) $this->settings->get()['captcha_failure_threshold'],
 					'captcha_failure_window_minutes' => (int) $this->settings->get()['captcha_failure_window_minutes'],
+					'captcha_challenge_count'        => $challenge_state['count'],
+					'captcha_challenges_before_temporary_block' => $challenge_threshold,
 				),
 			)
 		);
@@ -388,6 +453,7 @@ final class CaptchaGuard {
 
 		delete_transient( $this->transient_key_builder->captcha_challenge( $token ) );
 		$this->clear_captcha_failures( $ip );
+		$this->clear_captcha_challenges( $ip, $request_type );
 		$this->set_pass_cookie( $ip );
 
 		$this->event_logger->log(
@@ -543,7 +609,66 @@ final class CaptchaGuard {
 		delete_transient( $this->transient_key_builder->captcha_failure_history( $ip ) );
 	}
 
+	private function captcha_challenges_before_temporary_block( string $request_type ): int {
+		$settings = $this->settings->get();
+		$key      = $this->request_handling_catalog->setting_key( $request_type, 'captcha_challenges_before_temporary_block' );
+
+		return max( 0, (int) ( $settings[ $key ] ?? 0 ) );
+	}
+
+	private function captcha_challenge_state( string $ip, string $request_type, int $window_seconds ): array {
+		$key     = $this->transient_key_builder->captcha_challenge_history( $request_type, $ip );
+		$history = get_transient( $key );
+		$history = is_array( $history ) ? $history : array();
+		$now     = time();
+
+		$history = array_values(
+			array_filter(
+				$history,
+				static function ( $timestamp ) use ( $now, $window_seconds ): bool {
+					return ( (int) $timestamp ) >= ( $now - $window_seconds );
+				}
+			)
+		);
+
+		if ( empty( $history ) ) {
+			delete_transient( $key );
+		} else {
+			set_transient( $key, $history, max( MINUTE_IN_SECONDS, $window_seconds * 2 ) );
+		}
+
+		return array(
+			'count'   => count( $history ),
+			'history' => $history,
+		);
+	}
+
+	private function record_captcha_challenge( string $ip, string $request_type, int $window_seconds ): array {
+		$state     = $this->captcha_challenge_state( $ip, $request_type, $window_seconds );
+		$history   = $state['history'];
+		$history[] = time();
+
+		set_transient(
+			$this->transient_key_builder->captcha_challenge_history( $request_type, $ip ),
+			$history,
+			max( MINUTE_IN_SECONDS, $window_seconds * 2 )
+		);
+
+		return array(
+			'count'   => count( $history ),
+			'history' => $history,
+		);
+	}
+
+	private function clear_captcha_challenges( string $ip, string $request_type ): void {
+		delete_transient( $this->transient_key_builder->captcha_challenge_history( $request_type, $ip ) );
+	}
+
 	private function should_create_temporary_block_after_failures( int $failure_count, int $failure_threshold ): bool {
 		return $failure_threshold > 0 && $failure_count >= $failure_threshold;
+	}
+
+	private function should_create_temporary_block_after_challenges( int $challenge_count, int $challenge_threshold ): bool {
+		return $challenge_threshold > 0 && $challenge_count >= $challenge_threshold;
 	}
 }

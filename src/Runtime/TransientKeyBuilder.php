@@ -17,6 +17,10 @@ final class TransientKeyBuilder {
 		return 'vwfw_captcha_challenge_' . $token;
 	}
 
+	public function captcha_challenge_history( string $request_type, string $ip_address ): string {
+		return 'vwfw_captcha_challenges_' . $request_type . '_' . md5( $ip_address );
+	}
+
 	public function request_handling_rate_limit_hits( string $request_type, string $ip_address ): string {
 		return 'vwfw_request_hits_' . $request_type . '_' . md5( $ip_address );
 	}

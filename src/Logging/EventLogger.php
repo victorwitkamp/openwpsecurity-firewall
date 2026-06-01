@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Logging;
 
-use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
-use VictorWitkamp\OpenWPSecurity\Firewall\Http\RequestContext;
+use VictorWitkamp\OpenWPSecurity\Core\Http\RequestContext;
 use VictorWitkamp\OpenWPSecurity\Core\Location\GeoIpLookup;
+use VictorWitkamp\OpenWPSecurity\Core\Logging\EventRecord;
+use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -51,7 +52,7 @@ final class EventLogger {
 		 */
 		$event = (array) apply_filters( 'openwpsecurity_firewall_log_event_data', $event, $event_type, $extra );
 
-		$this->event_writer->insert( $event );
+		$this->event_writer->insert( EventRecord::from_array( $event ) );
 
 		/**
 		 * Fires after the firewall logs an event.

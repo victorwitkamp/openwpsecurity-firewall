@@ -1,5 +1,6 @@
 === OpenWPSecurity - Firewall ===
 Contributors: victorwitkamp
+Donate link: https://github.com/sponsors/victorwitkamp
 Tags: security, firewall, rate limiting, captcha, logging
 Requires at least: 6.5
 Tested up to: 6.9.4

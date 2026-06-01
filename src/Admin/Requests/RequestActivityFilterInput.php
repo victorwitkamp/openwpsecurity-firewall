@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Admin\Requests;
 
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\EventReportFormatter;
-use VictorWitkamp\OpenWPSecurity\Firewall\Http\RequestContext;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\EventReportFormatter;
+use VictorWitkamp\OpenWPSecurity\Core\Http\RequestContext;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

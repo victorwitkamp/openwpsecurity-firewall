@@ -1,6 +1,5 @@
 /vendor/
 /node_modules/
-/assets/css/
 /coverage/
 /dist/
 *.md

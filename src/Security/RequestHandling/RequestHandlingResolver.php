@@ -29,10 +29,32 @@ final class RequestHandlingResolver {
 		$settings = $this->settings->get();
 
 		return array(
-			'rate_limit_enabled'        => ! empty( $settings[ $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_enabled' ) ] ),
-			'rate_limit_threshold'      => (int) ( $settings[ $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_threshold' ) ] ?? $default_map[ $request_type ]['rate_limit_threshold'] ),
-			'rate_limit_window_seconds' => (int) ( $settings[ $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_window_seconds' ) ] ?? $default_map[ $request_type ]['rate_limit_window_seconds'] ),
+			'rate_limit_enabled'                        => ! empty( $settings[ $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_enabled' ) ] ),
+			'rate_limit_threshold'                      => (int) ( $settings[ $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_threshold' ) ] ?? $default_map[ $request_type ]['rate_limit_threshold'] ),
+			'rate_limit_window_seconds'                 => (int) ( $settings[ $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_window_seconds' ) ] ?? $default_map[ $request_type ]['rate_limit_window_seconds'] ),
+			'active_block_denials_before_permanent_ban' => (int) ( $settings[ $this->request_handling_catalog->setting_key( $request_type, 'active_block_denials_before_permanent_ban' ) ] ?? $default_map[ $request_type ]['active_block_denials_before_permanent_ban'] ),
+			'captcha_challenges_before_temporary_block' => (int) ( $settings[ $this->request_handling_catalog->setting_key( $request_type, 'captcha_challenges_before_temporary_block' ) ] ?? $default_map[ $request_type ]['captcha_challenges_before_temporary_block'] ),
 		);
+	}
+
+	public function active_block_denials_before_permanent_ban( string $request_type ): int {
+		$request_handling = $this->for_request_type( $request_type );
+
+		if ( array() === $request_handling ) {
+			return 0;
+		}
+
+		return max( 0, (int) $request_handling['active_block_denials_before_permanent_ban'] );
+	}
+
+	public function captcha_challenges_before_temporary_block( string $request_type ): int {
+		$request_handling = $this->for_request_type( $request_type );
+
+		if ( array() === $request_handling ) {
+			return 0;
+		}
+
+		return max( 0, (int) $request_handling['captcha_challenges_before_temporary_block'] );
 	}
 
 	public function temporary_block_settings(): array {

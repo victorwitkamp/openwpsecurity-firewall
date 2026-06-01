@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Admin\Pages;
 
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Pages\AbstractAdminPage;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\EventReportFormatter;
 use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\ReportPeriod;
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\EventReportFormatter;
+use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Navigation\AdminMenu;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\RequestHandlingActionDescriber;
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\Reports\DashboardReport;
-use VictorWitkamp\OpenWPSecurity\Firewall\Security\Ban\PermanentBanStore;
+use VictorWitkamp\OpenWPSecurity\Core\Security\Ban\PermanentBanStore;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestHandlingCatalog;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -24,7 +26,7 @@ final class DashboardPage extends AbstractAdminPage {
 	private RequestHandlingActionDescriber $request_handling_action_describer;
 
 	public function __construct( Settings $settings, DashboardReport $dashboard_report, PermanentBanStore $ban_store, RequestHandlingCatalog $request_handling_catalog, RequestHandlingActionDescriber $request_handling_action_describer, ReportPeriod $report_period, EventReportFormatter $event_report_formatter ) {
-		parent::__construct( $report_period, $event_report_formatter );
+		parent::__construct( $report_period, $event_report_formatter, AdminMenu::page_tabs() );
 		$this->settings                          = $settings;
 		$this->dashboard_report                  = $dashboard_report;
 		$this->ban_store                         = $ban_store;
@@ -124,6 +126,8 @@ final class DashboardPage extends AbstractAdminPage {
 							<th>Captcha</th>
 							<th>Threshold</th>
 							<th>Window</th>
+							<th>Active Block Ban</th>
+							<th>Captcha Temp Block</th>
 							<th>When Exceeded</th>
 						</tr>
 					</thead>
@@ -132,12 +136,24 @@ final class DashboardPage extends AbstractAdminPage {
 							<?php $rate_limit_enabled_key = $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_enabled' ); ?>
 							<?php $rate_limit_threshold_key = $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_threshold' ); ?>
 							<?php $rate_limit_window_seconds_key = $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_window_seconds' ); ?>
+							<?php $active_block_denials_key = $this->request_handling_catalog->setting_key( $request_type, 'active_block_denials_before_permanent_ban' ); ?>
+							<?php $captcha_challenges_key = $this->request_handling_catalog->setting_key( $request_type, 'captcha_challenges_before_temporary_block' ); ?>
 							<tr>
 								<td><?php echo esc_html( $label ); ?></td>
 								<td><?php echo esc_html( ! empty( $settings[ $rate_limit_enabled_key ] ) ? 'Enabled' : 'Disabled' ); ?></td>
 								<td><?php echo esc_html( $this->request_handling_action_describer->captcha_note( $settings, $request_type ) ); ?></td>
 								<td><?php echo esc_html( (string) $settings[ $rate_limit_threshold_key ] ); ?></td>
 								<td><?php echo esc_html( (string) $settings[ $rate_limit_window_seconds_key ] ); ?> sec</td>
+								<td><?php echo esc_html( (string) $settings[ $active_block_denials_key ] ); ?> denials</td>
+								<td>
+									<?php
+									echo esc_html(
+										$this->request_handling_catalog->supports_captcha( $request_type )
+											? (string) $settings[ $captcha_challenges_key ] . ' challenges'
+											: 'Not used'
+									);
+									?>
+								</td>
 								<td class="vwfw-break"><?php echo esc_html( $this->request_handling_action_describer->describe( $settings, $request_type ) ); ?></td>
 							</tr>
 						<?php endforeach; ?>

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Admin\Pages;
 
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Pages\AbstractAdminPage;
+use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\EventReportFormatter;
 use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\ReportPeriod;
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\EventReportFormatter;
+use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Navigation\AdminMenu;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\RequestHandlingActionDescriber;
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestHandlingCatalog;
@@ -20,7 +22,7 @@ final class SettingsPage extends AbstractAdminPage {
 	private RequestHandlingActionDescriber $request_handling_action_describer;
 
 	public function __construct( Settings $settings, ReportPeriod $report_period, EventReportFormatter $event_report_formatter, RequestHandlingCatalog $request_handling_catalog, RequestHandlingActionDescriber $request_handling_action_describer ) {
-		parent::__construct( $report_period, $event_report_formatter );
+		parent::__construct( $report_period, $event_report_formatter, AdminMenu::page_tabs() );
 		$this->settings                          = $settings;
 		$this->request_handling_catalog          = $request_handling_catalog;
 		$this->request_handling_action_describer = $request_handling_action_describer;
@@ -141,6 +143,16 @@ final class SettingsPage extends AbstractAdminPage {
 				</td>
 			</tr>
 			<tr>
+				<th scope="row">Login Protection permanent bans</th>
+				<td>
+					<label>
+						<input name="enforce_loginprotection_bans" type="checkbox" value="1" <?php checked( ! empty( $settings['enforce_loginprotection_bans'] ) ); ?>>
+						Enforce Login Protection permanent bans globally in Firewall
+					</label>
+					<p class="description">When enabled, IP addresses permanently banned by OpenWPSecurity - Login Protection are also blocked by Firewall across all request types. The Login Protection ban list remains stored separately.</p>
+				</td>
+			</tr>
+			<tr>
 				<th scope="row">Enable debug bar</th>
 				<td>
 					<label>
@@ -201,7 +213,7 @@ final class SettingsPage extends AbstractAdminPage {
 				<th scope="row"><label for="<?php echo esc_attr( $blocks_before_permanent_ban_key ); ?>">Permanent ban after temporary blocks</label></th>
 				<td>
 					<input id="<?php echo esc_attr( $blocks_before_permanent_ban_key ); ?>" name="<?php echo esc_attr( $blocks_before_permanent_ban_key ); ?>" type="number" min="0" value="<?php echo esc_attr( (string) $settings[ $blocks_before_permanent_ban_key ] ); ?>" class="small-text"> temporary blocks
-					<p class="description">How many completed request-handling temporary blocks from the same IP address are allowed before a permanent ban is created. Use <strong>0</strong> to disable permanent-ban escalation from request handling.</p>
+					<p class="description">How many request-handling temporary blocks from the same IP address are allowed before a permanent ban is created. This remains active in addition to endpoint-specific escalation during a live temporary block. Use <strong>0</strong> to disable this repeated-block escalation path.</p>
 				</td>
 			</tr>
 		</table>
@@ -215,6 +227,8 @@ final class SettingsPage extends AbstractAdminPage {
 						<th>Captcha</th>
 						<th>Threshold</th>
 						<th>Window (sec)</th>
+						<th>Active Block Ban</th>
+						<th>Captcha Temp Block</th>
 						<th>When Exceeded</th>
 					</tr>
 				</thead>
@@ -223,6 +237,8 @@ final class SettingsPage extends AbstractAdminPage {
 						<?php $rate_limit_enabled_key = $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_enabled' ); ?>
 						<?php $rate_limit_threshold_key = $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_threshold' ); ?>
 						<?php $rate_limit_window_seconds_key = $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_window_seconds' ); ?>
+						<?php $active_block_denials_key = $this->request_handling_catalog->setting_key( $request_type, 'active_block_denials_before_permanent_ban' ); ?>
+						<?php $captcha_challenges_key = $this->request_handling_catalog->setting_key( $request_type, 'captcha_challenges_before_temporary_block' ); ?>
 						<tr>
 							<td><strong><?php echo esc_html( $label ); ?></strong></td>
 							<td>
@@ -240,6 +256,19 @@ final class SettingsPage extends AbstractAdminPage {
 							<td>
 								<input type="number" min="1" class="small-text" name="<?php echo esc_attr( $rate_limit_window_seconds_key ); ?>" value="<?php echo esc_attr( (string) $settings[ $rate_limit_window_seconds_key ] ); ?>">
 							</td>
+							<td>
+								<input type="number" min="0" class="small-text" name="<?php echo esc_attr( $active_block_denials_key ); ?>" value="<?php echo esc_attr( (string) $settings[ $active_block_denials_key ] ); ?>">
+								<span class="description">denials</span>
+							</td>
+							<td>
+								<?php if ( $this->request_handling_catalog->supports_captcha( $request_type ) ) : ?>
+									<input type="number" min="0" class="small-text" name="<?php echo esc_attr( $captcha_challenges_key ); ?>" value="<?php echo esc_attr( (string) $settings[ $captcha_challenges_key ] ); ?>">
+									<span class="description">challenges</span>
+								<?php else : ?>
+									<span class="description">Not used</span>
+									<input type="hidden" name="<?php echo esc_attr( $captcha_challenges_key ); ?>" value="0">
+								<?php endif; ?>
+							</td>
 							<td class="vwfw-break">
 								<?php echo esc_html( $this->request_handling_action_describer->describe( $settings, $request_type ) ); ?>
 							</td>
@@ -248,7 +277,7 @@ final class SettingsPage extends AbstractAdminPage {
 				</tbody>
 			</table>
 		</div>
-		<p class="description">Rate limiting is endpoint-local. <strong>Frontend Page</strong> and <strong>WP Login</strong> return an HTTP 429 page, optionally with shared captcha. The API-style endpoints above can return HTTP 429 or create a global temporary block that denies all request types with a firewall response.</p>
+		<p class="description">Rate limiting is endpoint-local. <strong>Frontend Page</strong> and <strong>WP Login</strong> return an HTTP 429 page, optionally with shared captcha. Repeated unsolved captcha pages can create a temporary block. API-style endpoints can return HTTP 429 or create a global temporary block. Active temporary blocks can escalate to permanent bans using the endpoint-specific denial threshold above.</p>
 		<?php
 	}
 }
