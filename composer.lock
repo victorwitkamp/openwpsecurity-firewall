@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "67cf1daf2b79687e77f75de45ebfcb57",
+    "content-hash": "c6ff05a16f68265abc02f111e7a23321",
     "packages": [
         {
             "name": "laminas/laminas-diactoros",
@@ -224,16 +224,16 @@
         },
         {
             "name": "openwpsecurity/core",
-            "version": "v0.3.0",
+            "version": "v0.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/victorwitkamp/openwpsecurity-core.git",
-                "reference": "0ded26c56866f3d178bc76da7bf36ce40e2d5932"
+                "reference": "7d3b41e6d54a7b01a000d3f93652fd6140c6c9b0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/victorwitkamp/openwpsecurity-core/zipball/0ded26c56866f3d178bc76da7bf36ce40e2d5932",
-                "reference": "0ded26c56866f3d178bc76da7bf36ce40e2d5932",
+                "url": "https://api.github.com/repos/victorwitkamp/openwpsecurity-core/zipball/7d3b41e6d54a7b01a000d3f93652fd6140c6c9b0",
+                "reference": "7d3b41e6d54a7b01a000d3f93652fd6140c6c9b0",
                 "shasum": ""
             },
             "require": {
@@ -276,7 +276,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-06-10T17:58:40+00:00"
+            "time": "2026-06-11T16:30:17+00:00"
         },
         {
             "name": "php-di/invoker",
