@@ -50,6 +50,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 		?>
 		<div class="wrap vwfw-admin">
 			<h1>OpenWPSecurity - Firewall Security Incidents</h1>
+			<p>Review firewall interventions, challenge outcomes, temporary bans, and permanent-ban escalations.</p>
 			<?php $this->render_page_tabs( 'openwpsecurity-firewall-security' ); ?>
 			<?php $this->render_period_form( 'openwpsecurity-firewall-security', $period, true, $this->security_incident_filter_input->query_args( $filters ) ); ?>
 			<?php $this->render_filters_form( $filters, $country_options ); ?>
@@ -59,10 +60,10 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 			<?php
 			$this->record_table_panel->render(
 				'Security Incidents',
-				'Firewall interventions and challenge events from Request Handling and Captcha, separate from Login Protection activity.',
+				'Firewall interventions, challenge events, temporary bans, and permanent bans, separate from Login Protection activity.',
 				$total_items,
 				$paginator->render(),
-				array( 'Time', 'Type', 'IP', 'Country', 'Request Type', 'Lockout Expires', 'Details', 'Request URI' ),
+				array( 'Time', 'Type', 'IP', 'Country', 'Request Type', 'Temporary Ban Expires', 'Details', 'Request URI' ),
 				$rows,
 				'No security incidents found for this period.',
 				'widefat striped fixed vwfw-incident-table',
@@ -73,7 +74,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 					<td><?php echo esc_html( $this->event_report_formatter->event_type_label( (string) $row['event_type'] ) ); ?></td>
 					<td><?php echo esc_html( (string) $row['ip_address'] ); ?></td>
 					<td><?php echo esc_html( trim( ( (string) $row['country_code'] ) . ' ' . ( (string) $row['country_name'] ) ) ); ?></td>
-					<td><?php echo esc_html( $this->incident_request_type_label( $details ) ); ?></td>
+					<td><?php echo esc_html( $this->incident_request_type_label( (string) ( $row['request_type'] ?? '' ), $details ) ); ?></td>
 					<td><?php echo esc_html( $row['lockout_expires_at'] ? $this->event_report_formatter->admin_datetime( (string) $row['lockout_expires_at'] ) : '' ); ?></td>
 					<td class="vwfw-break"><?php echo esc_html( $this->format_incident_details( (string) $row['event_type'], $details ) ); ?></td>
 					<td class="vwfw-break"><?php echo esc_html( (string) $row['request_uri'] ); ?></td>
@@ -137,7 +138,11 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 		);
 	}
 
-	private function incident_request_type_label( array $details ): string {
+	private function incident_request_type_label( string $request_type, array $details ): string {
+		if ( '' !== $request_type ) {
+			return $this->event_report_formatter->request_type_label( $request_type );
+		}
+
 		if ( ! empty( $details['request_type'] ) ) {
 			return $this->event_report_formatter->request_type_label( (string) $details['request_type'] );
 		}
@@ -185,7 +190,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 			if ( 'request_handling' === (string) ( $details['source'] ?? '' ) ) {
 				if ( 'active_temporary_block_denials' === (string) ( $details['reason'] ?? '' ) ) {
 					return sprintf(
-						'Request handling permanently banned this IP after %d denied request(s) during an active temporary block triggered by %s.',
+						'Request handling permanently banned this IP after %d denied request(s) during an active temporary ban triggered by %s.',
 						(int) ( $details['active_block_denial_count'] ?? 0 ),
 						$this->event_report_formatter->request_type_label( (string) ( $details['trigger_request_type'] ?? '' ) )
 					);
@@ -193,14 +198,14 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 
 				if ( 'captcha_challenge_volume' === (string) ( $details['reason'] ?? '' ) ) {
 					return sprintf(
-						'Request handling permanently banned this IP after repeated unsolved captcha challenge pages on %s and %d temporary block(s).',
+						'Request handling permanently banned this IP after repeated unsolved captcha challenge pages on %s and %d temporary ban(s).',
 						$this->event_report_formatter->request_type_label( (string) ( $details['request_type'] ?? '' ) ),
 						(int) ( $details['temporary_block_count'] ?? 0 )
 					);
 				}
 
 				return sprintf(
-					'%s via request handling on %s after %d temporary block(s).',
+					'%s via request handling on %s after %d temporary ban(s).',
 					(string) ( $details['reason'] ?? 'Permanent ban created' ),
 					$this->event_report_formatter->request_type_label( (string) ( $details['request_type'] ?? '' ) ),
 					(int) ( $details['temporary_block_count'] ?? 0 )
@@ -229,14 +234,14 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 				} elseif ( 'rate_limit_page' === $details['response_action'] ) {
 					$message .= ' A 429 rate-limit page handled the response.';
 				} elseif ( 'message_only' === $details['response_action'] ) {
-					$message .= ' The endpoint returned a 429 firewall message without a global temporary block.';
+					$message .= ' The endpoint returned a 429 firewall message without creating a temporary ban.';
 				} elseif ( 'temporary_block' === $details['response_action'] ) {
-					$message .= ' Request handling escalated immediately into a global temporary block.';
+					$message .= ' Request handling escalated immediately into a temporary ban.';
 				}
 			}
 
 			if ( ! empty( $details['temporary_block_enabled'] ) ) {
-				$message .= ' Global temporary blocks were enabled for this request.';
+				$message .= ' Temporary bans were enabled for this request.';
 			}
 
 			return $message;
@@ -245,7 +250,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 		if ( 'request_temporary_block_created' === $event_type ) {
 			if ( 'captcha_failed' === (string) ( $details['reason'] ?? '' ) ) {
 				$message = sprintf(
-					'%d failed captcha answer(s) in %d minute(s) created a global temporary block for %d minute(s).',
+					'%d failed captcha answer(s) in %d minute(s) created a temporary ban for %d minute(s).',
 					(int) ( $details['captcha_failure_count'] ?? 0 ),
 					(int) ( $details['captcha_failure_window_minutes'] ?? 0 ),
 					(int) ( $details['temporary_block_minutes'] ?? 0 )
@@ -253,7 +258,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 
 				if ( isset( $details['temporary_block_count'] ) && isset( $details['temporary_blocks_before_permanent_ban'] ) ) {
 					$message .= sprintf(
-						' Temporary blocks: %d/%d.',
+						' Temporary bans: %d/%d.',
 						(int) $details['temporary_block_count'],
 						(int) $details['temporary_blocks_before_permanent_ban']
 					);
@@ -264,7 +269,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 
 			if ( 'captcha_challenge_volume' === (string) ( $details['reason'] ?? '' ) ) {
 				$message = sprintf(
-					'%d unsolved captcha challenge page(s) in %d seconds created a global temporary block for %d minute(s).',
+					'%d unsolved captcha challenge page(s) in %d seconds created a temporary ban for %d minute(s).',
 					(int) ( $details['captcha_challenge_count'] ?? 0 ),
 					(int) ( $details['captcha_challenge_window_seconds'] ?? 0 ),
 					(int) ( $details['temporary_block_minutes'] ?? 0 )
@@ -272,7 +277,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 
 				if ( isset( $details['temporary_block_count'] ) && isset( $details['temporary_blocks_before_permanent_ban'] ) ) {
 					$message .= sprintf(
-						' Temporary blocks: %d/%d.',
+						' Temporary bans: %d/%d.',
 						(int) $details['temporary_block_count'],
 						(int) $details['temporary_blocks_before_permanent_ban']
 					);
@@ -282,7 +287,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 			}
 
 			$message = sprintf(
-				'%d hits in %d seconds against a threshold of %d created a global temporary block for %d minute(s).',
+				'%d hits in %d seconds against a threshold of %d created a temporary ban for %d minute(s).',
 				(int) ( $details['hit_count'] ?? 0 ),
 				(int) ( $details['rate_limit_window_seconds'] ?? 0 ),
 				(int) ( $details['rate_limit_threshold'] ?? 0 ),
@@ -291,7 +296,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 
 			if ( isset( $details['temporary_block_count'] ) && isset( $details['temporary_blocks_before_permanent_ban'] ) ) {
 				$message .= sprintf(
-					' Temporary blocks: %d/%d.',
+					' Temporary bans: %d/%d.',
 					(int) $details['temporary_block_count'],
 					(int) $details['temporary_blocks_before_permanent_ban']
 				);
@@ -301,7 +306,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 		}
 
 		if ( 'request_temporarily_blocked' === $event_type ) {
-			$message = 'A global request-handling temporary block denied this request.';
+			$message = 'An active Firewall temporary ban denied this request.';
 
 			if ( ! empty( $details['trigger_request_type'] ) ) {
 				$message .= ' Triggered by ' . $this->event_report_formatter->request_type_label( (string) $details['trigger_request_type'] ) . '.';

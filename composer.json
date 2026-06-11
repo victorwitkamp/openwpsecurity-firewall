@@ -1,24 +1,12 @@
 {
 	"name": "victorwitkamp/openwpsecurity-firewall",
-	"description": "WordPress request logging, request handling, captcha challenges, and permanent bans.",
+	"description": "WordPress request logging, request handling, captcha challenges, temporary bans, and permanent bans.",
 	"type": "wordpress-plugin",
 	"license": "GPL-2.0-or-later",
 	"funding": [
 		{
 			"type": "github",
 			"url": "https://github.com/sponsors/victorwitkamp"
-		}
-	],
-	"repositories": [
-		{
-			"type": "path",
-			"url": "../openwpsecurity-core",
-			"options": {
-				"symlink": true,
-				"versions": {
-					"openwpsecurity/core": "0.2.0"
-				}
-			}
 		}
 	],
 	"autoload": {
@@ -29,7 +17,7 @@
 	"require": {
 		"laminas/laminas-diactoros": "^3.8",
 		"laminas/laminas-httphandlerrunner": "^2.13",
-		"openwpsecurity/core": "^0.2",
+		"openwpsecurity/core": "^0.4.0",
 		"php-di/php-di": "^7.0"
 	},
 	"require-dev": {

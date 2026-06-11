@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e0222fdcc2d490e4a33d375a9961327d",
+    "content-hash": "67cf1daf2b79687e77f75de45ebfcb57",
     "packages": [
         {
             "name": "laminas/laminas-diactoros",
@@ -224,11 +224,17 @@
         },
         {
             "name": "openwpsecurity/core",
-            "version": "0.2.0",
+            "version": "v0.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/victorwitkamp/openwpsecurity-core.git",
+                "reference": "0ded26c56866f3d178bc76da7bf36ce40e2d5932"
+            },
             "dist": {
-                "type": "path",
-                "url": "../openwpsecurity-core",
-                "reference": "78459d2e478d3a2cae1903339719f3105e413b2b"
+                "type": "zip",
+                "url": "https://api.github.com/repos/victorwitkamp/openwpsecurity-core/zipball/0ded26c56866f3d178bc76da7bf36ce40e2d5932",
+                "reference": "0ded26c56866f3d178bc76da7bf36ce40e2d5932",
+                "shasum": ""
             },
             "require": {
                 "laminas/laminas-diactoros": "^3.8",
@@ -248,29 +254,11 @@
                     "VictorWitkamp\\OpenWPSecurity\\Core\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "VictorWitkamp\\OpenWPSecurity\\Core\\Tests\\": "tests/"
-                }
-            },
-            "scripts": {
-                "install-codestandards": [
-                    "PHPCSStandards\\Composer\\Plugin\\Installers\\PHPCodeSniffer\\Plugin::run"
-                ],
-                "phpcs": [
-                    "phpcs --standard=phpcs.xml.dist"
-                ],
-                "phpcbf": [
-                    "phpcbf --standard=phpcs.xml.dist"
-                ],
-                "test": [
-                    "phpunit --configuration phpunit.xml.dist"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-2.0-or-later"
             ],
-            "description": "PSR HTTP and WordPress adapter utilities for OpenWPSecurity plugins.",
+            "description": "Shared HTTP, database, admin, and security infrastructure for OpenWPSecurity plugins.",
             "homepage": "https://github.com/victorwitkamp/openwpsecurity-core",
             "keywords": [
                 "openwpsecurity",
@@ -284,14 +272,11 @@
             },
             "funding": [
                 {
-                    "type": "github",
-                    "url": "https://github.com/sponsors/victorwitkamp"
+                    "url": "https://github.com/sponsors/victorwitkamp",
+                    "type": "github"
                 }
             ],
-            "transport-options": {
-                "symlink": true,
-                "relative": true
-            }
+            "time": "2026-06-10T17:58:40+00:00"
         },
         {
             "name": "php-di/invoker",

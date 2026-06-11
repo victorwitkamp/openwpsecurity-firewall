@@ -8,10 +8,10 @@ use VictorWitkamp\OpenWPSecurity\Core\Admin\Pages\AbstractAdminPage;
 use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\EventReportFormatter;
 use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\ReportPeriod;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Navigation\AdminMenu;
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Reporting\RequestHandlingActionDescriber;
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\Reports\DashboardReport;
 use VictorWitkamp\OpenWPSecurity\Core\Security\Ban\PermanentBanStore;
+use VictorWitkamp\OpenWPSecurity\Firewall\Security\Ban\TemporaryBanRepository;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestHandlingCatalog;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,47 +23,48 @@ final class DashboardPage extends AbstractAdminPage {
 	private PermanentBanStore $ban_store;
 	private Settings $settings;
 	private RequestHandlingCatalog $request_handling_catalog;
-	private RequestHandlingActionDescriber $request_handling_action_describer;
+	private TemporaryBanRepository $temporary_ban_repository;
 
-	public function __construct( Settings $settings, DashboardReport $dashboard_report, PermanentBanStore $ban_store, RequestHandlingCatalog $request_handling_catalog, RequestHandlingActionDescriber $request_handling_action_describer, ReportPeriod $report_period, EventReportFormatter $event_report_formatter ) {
+	public function __construct( Settings $settings, DashboardReport $dashboard_report, PermanentBanStore $ban_store, RequestHandlingCatalog $request_handling_catalog, TemporaryBanRepository $temporary_ban_repository, ReportPeriod $report_period, EventReportFormatter $event_report_formatter ) {
 		parent::__construct( $report_period, $event_report_formatter, AdminMenu::page_tabs() );
-		$this->settings                          = $settings;
-		$this->dashboard_report                  = $dashboard_report;
-		$this->ban_store                         = $ban_store;
-		$this->request_handling_catalog          = $request_handling_catalog;
-		$this->request_handling_action_describer = $request_handling_action_describer;
+		$this->settings                 = $settings;
+		$this->dashboard_report         = $dashboard_report;
+		$this->ban_store                = $ban_store;
+		$this->request_handling_catalog = $request_handling_catalog;
+		$this->temporary_ban_repository = $temporary_ban_repository;
 	}
 
 	public function render(): void {
 		$this->assert_page_access();
 
 		$period = $this->current_period( '24h' );
-		$data   = $this->load_dashboard_data();
+
+		if ( 'all' === $period ) {
+			$period = '24h';
+		}
+
+		$data = $this->load_dashboard_data( $period );
 		?>
-		<div class="wrap vwfw-admin">
+		<div class="wrap vwfw-admin vwfw-dashboard">
 			<h1>OpenWPSecurity - Firewall</h1>
-			<p>Request handling, captcha challenges, security incidents, and permanent bans.</p>
+			<p>Selected-range firewall activity and current enforcement state.</p>
 
 			<?php $this->render_page_tabs( 'openwpsecurity-firewall' ); ?>
 			<?php $this->render_period_form( 'openwpsecurity-firewall', $period, false ); ?>
 
 			<?php $this->render_summary_cards( $data ); ?>
-
-			<div class="vwfw-grid">
-				<?php $this->render_captcha_panel( $data['settings'] ); ?>
-				<?php $this->render_request_handling_panel( $data['settings'] ); ?>
-				<?php $this->render_permanent_ban_panel( $data['permanent_bans'] ); ?>
-			</div>
+			<?php $this->render_current_state( $data ); ?>
 		</div>
 		<?php
 	}
 
-	private function load_dashboard_data(): array {
-		$period_seconds = $this->report_period->seconds( $this->current_period( '24h' ) );
+	private function load_dashboard_data( string $period ): array {
+		$period_seconds = $this->report_period->seconds( $period );
 
 		return array(
 			'summary'        => $this->dashboard_report->summary( $period_seconds ),
 			'permanent_bans' => $this->ban_store->count_bans(),
+			'temporary_bans' => $this->temporary_ban_repository->count_active_temporary_bans(),
 			'settings'       => $this->settings->get(),
 		);
 	}
@@ -76,122 +77,64 @@ final class DashboardPage extends AbstractAdminPage {
 			<?php $this->render_summary_card( 'Frontend Page Visits', (int) $summary['page_visits'] ); ?>
 			<?php $this->render_summary_card( 'Security Incidents', (int) $summary['security_incidents'] ); ?>
 			<?php $this->render_summary_card( 'Unique IPs', (int) $summary['unique_ips'] ); ?>
-			<?php $this->render_summary_card( 'Temporary Blocks', (int) $summary['temporary_blocks'] ); ?>
+			<?php $this->render_summary_card( 'Temporary Bans Created', (int) $summary['temporary_blocks'] ); ?>
 			<?php $this->render_summary_card( 'Captcha Triggered', (int) $summary['captcha_required'] ); ?>
 			<?php $this->render_summary_card( 'Captcha Solved', (int) $summary['captcha_passed'] ); ?>
-			<?php $this->render_summary_card( 'Permanent Bans', (int) $data['permanent_bans'] ); ?>
+			<?php $this->render_summary_card( 'Permanent Bans Created', (int) $summary['permanent_bans'] ); ?>
 		</div>
 		<?php
 	}
 
-	private function render_captcha_panel( array $settings ): void {
-		$captcha_enabled_key = $this->request_handling_catalog->captcha_enabled_setting_key();
-		?>
-		<div class="vwfw-panel">
-			<h2>Captcha</h2>
-			<table class="widefat striped">
-				<tbody>
-					<tr><td>Enabled</td><td><?php echo esc_html( ! empty( $settings[ $captcha_enabled_key ] ) ? 'Yes' : 'No' ); ?></td></tr>
-					<tr><td>Temporary Block After Failed Answers</td><td><?php echo esc_html( (string) $settings['captcha_failure_threshold'] ); ?> failed answer(s)</td></tr>
-					<tr><td>Failure Window</td><td><?php echo esc_html( (string) $settings['captcha_failure_window_minutes'] ); ?> minutes</td></tr>
-					<tr><td>Bypass after success</td><td><?php echo esc_html( (string) $settings['captcha_pass_minutes'] ); ?> minutes</td></tr>
-					<tr><td>Enabled Endpoints</td><td><?php echo esc_html( $this->enabled_captcha_targets_label( $settings ) ); ?></td></tr>
-				</tbody>
-			</table>
-		</div>
-		<?php
-	}
+	private function render_current_state( array $data ): void {
+		$settings                    = $data['settings'];
+		$captcha_enabled_key         = $this->request_handling_catalog->captcha_enabled_setting_key();
+		$temporary_block_enabled_key = $this->request_handling_catalog->temporary_block_enabled_setting_key();
+		$permanent_bans_url          = admin_url( 'admin.php?page=openwpsecurity-firewall-bans' );
+		$temporary_bans_url          = admin_url( 'admin.php?page=openwpsecurity-firewall-temporary-bans' );
+		$policies_url                = admin_url( 'admin.php?page=openwpsecurity-firewall-policies' );
+		$enabled_endpoint_policies   = 0;
 
-	private function render_request_handling_panel( array $settings ): void {
-		$temporary_block_enabled_key     = $this->request_handling_catalog->temporary_block_enabled_setting_key();
-		$temporary_block_minutes_key     = $this->request_handling_catalog->temporary_block_minutes_setting_key();
-		$blocks_before_permanent_ban_key = $this->request_handling_catalog->temporary_blocks_before_permanent_ban_setting_key();
-		?>
-		<div class="vwfw-panel">
-			<h2>Request Handling</h2>
-			<table class="widefat striped">
-				<tbody>
-					<tr><td>Global Temporary Blocks</td><td><?php echo esc_html( ! empty( $settings[ $temporary_block_enabled_key ] ) ? 'Enabled' : 'Disabled' ); ?></td></tr>
-					<tr><td>Temporary Block Duration</td><td><?php echo esc_html( (string) $settings[ $temporary_block_minutes_key ] ); ?> minutes</td></tr>
-					<tr><td>Permanent Ban After Temporary Blocks</td><td><?php echo esc_html( (string) $settings[ $blocks_before_permanent_ban_key ] ); ?> blocks</td></tr>
-				</tbody>
-			</table>
-			<br>
-			<div class="vwfw-record-table-wrap">
-				<table class="widefat striped fixed vwfw-request-handling-summary-table">
-					<thead>
-						<tr>
-							<th>Endpoint</th>
-							<th>Rate Limiting</th>
-							<th>Captcha</th>
-							<th>Threshold</th>
-							<th>Window</th>
-							<th>Active Block Ban</th>
-							<th>Captcha Temp Block</th>
-							<th>When Exceeded</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php foreach ( $this->request_handling_catalog->targets() as $request_type => $label ) : ?>
-							<?php $rate_limit_enabled_key = $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_enabled' ); ?>
-							<?php $rate_limit_threshold_key = $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_threshold' ); ?>
-							<?php $rate_limit_window_seconds_key = $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_window_seconds' ); ?>
-							<?php $active_block_denials_key = $this->request_handling_catalog->setting_key( $request_type, 'active_block_denials_before_permanent_ban' ); ?>
-							<?php $captcha_challenges_key = $this->request_handling_catalog->setting_key( $request_type, 'captcha_challenges_before_temporary_block' ); ?>
-							<tr>
-								<td><?php echo esc_html( $label ); ?></td>
-								<td><?php echo esc_html( ! empty( $settings[ $rate_limit_enabled_key ] ) ? 'Enabled' : 'Disabled' ); ?></td>
-								<td><?php echo esc_html( $this->request_handling_action_describer->captcha_note( $settings, $request_type ) ); ?></td>
-								<td><?php echo esc_html( (string) $settings[ $rate_limit_threshold_key ] ); ?></td>
-								<td><?php echo esc_html( (string) $settings[ $rate_limit_window_seconds_key ] ); ?> sec</td>
-								<td><?php echo esc_html( (string) $settings[ $active_block_denials_key ] ); ?> denials</td>
-								<td>
-									<?php
-									echo esc_html(
-										$this->request_handling_catalog->supports_captcha( $request_type )
-											? (string) $settings[ $captcha_challenges_key ] . ' challenges'
-											: 'Not used'
-									);
-									?>
-								</td>
-								<td class="vwfw-break"><?php echo esc_html( $this->request_handling_action_describer->describe( $settings, $request_type ) ); ?></td>
-							</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
-			</div>
-		</div>
-		<?php
-	}
-
-	private function enabled_captcha_targets_label( array $settings ): string {
-		if ( empty( $settings[ $this->request_handling_catalog->captcha_enabled_setting_key() ] ) ) {
-			return 'None';
-		}
-
-		$labels = array();
-
-		foreach ( $this->request_handling_catalog->targets() as $request_type => $label ) {
-			if ( $this->request_handling_catalog->supports_captcha( $request_type ) ) {
-				$labels[] = $label;
+		foreach ( array_keys( $this->request_handling_catalog->targets() ) as $request_type ) {
+			if ( ! empty( $settings[ $this->request_handling_catalog->setting_key( $request_type, 'rate_limit_enabled' ) ] ) ) {
+				++$enabled_endpoint_policies;
 			}
 		}
-
-		return empty( $labels ) ? 'None' : implode( ', ', $labels );
-	}
-
-	private function render_permanent_ban_panel( int $permanent_ban_count ): void {
 		?>
-		<div class="vwfw-panel">
-			<h2>Permanent Bans</h2>
-			<p class="description">Permanent bans can be created by Request Handling and Login Protection, and they block all request types.</p>
-			<table class="widefat striped">
-				<tbody>
-					<tr><td>Current permanent bans</td><td><?php echo esc_html( number_format_i18n( $permanent_ban_count ) ); ?></td></tr>
-					<tr><td>Management page</td><td><a href="<?php echo esc_url( admin_url( 'admin.php?page=openwpsecurity-firewall-bans' ) ); ?>">Open Permanent Bans</a></td></tr>
-				</tbody>
-			</table>
-		</div>
+		<section class="vwfw-current-state">
+			<div class="vwfw-section-heading">
+				<div>
+					<h2>Current Enforcement</h2>
+					<p class="description">Live state and policy status. These values are not affected by the selected reporting range.</p>
+				</div>
+			</div>
+			<div class="vwfw-state-grid vwfw-state-grid--compact">
+				<a class="vwfw-state-item" href="<?php echo esc_url( $temporary_bans_url ); ?>">
+					<span>Current Temporary Bans</span>
+					<strong><?php echo esc_html( number_format_i18n( (int) $data['temporary_bans'] ) ); ?></strong>
+					<small>Open management page</small>
+				</a>
+				<a class="vwfw-state-item" href="<?php echo esc_url( $permanent_bans_url ); ?>">
+					<span>Current Permanent Bans</span>
+					<strong><?php echo esc_html( number_format_i18n( (int) $data['permanent_bans'] ) ); ?></strong>
+					<small>Open management page</small>
+				</a>
+				<a class="vwfw-state-item" href="<?php echo esc_url( $policies_url ); ?>">
+					<span>Endpoint Policies</span>
+					<strong><?php echo esc_html( number_format_i18n( $enabled_endpoint_policies ) ); ?> of <?php echo esc_html( number_format_i18n( count( $this->request_handling_catalog->targets() ) ) ); ?> enabled</strong>
+					<small>Review endpoint rate limits</small>
+				</a>
+				<a class="vwfw-state-item" href="<?php echo esc_url( $policies_url ); ?>">
+					<span>Shared Captcha</span>
+					<strong><?php echo esc_html( ! empty( $settings[ $captcha_enabled_key ] ) ? 'Enabled' : 'Disabled' ); ?></strong>
+					<small>Review challenge policy</small>
+				</a>
+				<a class="vwfw-state-item" href="<?php echo esc_url( $policies_url ); ?>">
+					<span>Temporary Ban Policy</span>
+					<strong><?php echo esc_html( ! empty( $settings[ $temporary_block_enabled_key ] ) ? 'Enabled' : 'Disabled' ); ?></strong>
+					<small>Review escalation policy</small>
+				</a>
+			</div>
+		</section>
 		<?php
 	}
 }

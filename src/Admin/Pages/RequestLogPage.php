@@ -11,29 +11,30 @@ use VictorWitkamp\OpenWPSecurity\Core\Admin\Presentation\RecordTablePanel;
 use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\EventReportFormatter;
 use VictorWitkamp\OpenWPSecurity\Core\Admin\Reporting\ReportPeriod;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Navigation\AdminMenu;
-use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Requests\RequestActivityFilterInput;
-use VictorWitkamp\OpenWPSecurity\Firewall\Logging\Reports\RequestActivityReport;
+use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Requests\RequestLogFilterInput;
+use VictorWitkamp\OpenWPSecurity\Firewall\Logging\Reports\RequestLogReport;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-final class RequestHandlingPage extends AbstractAdminPage {
-	private const PER_PAGE = 25;
+final class RequestLogPage extends AbstractAdminPage {
+	private const PER_PAGE  = 25;
+	private const PAGE_SLUG = 'openwpsecurity-firewall-request-log';
 
-	private RequestActivityReport $request_activity_report;
-	private RequestActivityFilterInput $request_activity_filter_input;
+	private RequestLogReport $request_log_report;
+	private RequestLogFilterInput $request_log_filter_input;
 	private CountryDistributionPanel $country_distribution_panel;
 	private FilterFormRenderer $filter_form_renderer;
 	private RecordTablePanel $record_table_panel;
 
-	public function __construct( RequestActivityReport $request_activity_report, RequestActivityFilterInput $request_activity_filter_input, CountryDistributionPanel $country_distribution_panel, FilterFormRenderer $filter_form_renderer, RecordTablePanel $record_table_panel, ReportPeriod $report_period, EventReportFormatter $event_report_formatter ) {
+	public function __construct( RequestLogReport $request_log_report, RequestLogFilterInput $request_log_filter_input, CountryDistributionPanel $country_distribution_panel, FilterFormRenderer $filter_form_renderer, RecordTablePanel $record_table_panel, ReportPeriod $report_period, EventReportFormatter $event_report_formatter ) {
 		parent::__construct( $report_period, $event_report_formatter, AdminMenu::page_tabs() );
-		$this->request_activity_report       = $request_activity_report;
-		$this->request_activity_filter_input = $request_activity_filter_input;
-		$this->country_distribution_panel    = $country_distribution_panel;
-		$this->filter_form_renderer          = $filter_form_renderer;
-		$this->record_table_panel            = $record_table_panel;
+		$this->request_log_report         = $request_log_report;
+		$this->request_log_filter_input   = $request_log_filter_input;
+		$this->country_distribution_panel = $country_distribution_panel;
+		$this->filter_form_renderer       = $filter_form_renderer;
+		$this->record_table_panel         = $record_table_panel;
 	}
 
 	public function render(): void {
@@ -41,18 +42,18 @@ final class RequestHandlingPage extends AbstractAdminPage {
 
 		$period          = $this->current_period( 'all' );
 		$period_seconds  = $this->period_seconds_for( $period );
-		$filters         = $this->request_activity_filter_input->read();
-		$total_items     = $this->request_activity_report->count( $filters, $period_seconds );
-		$paginator       = $this->create_paginator( $total_items, self::PER_PAGE, 'openwpsecurity-firewall-request-handling', $period, $this->request_activity_filter_input->query_args( $filters ) );
-		$rows            = $this->request_activity_report->rows( $filters, $period_seconds, self::PER_PAGE, $paginator->offset() );
-		$countries       = $this->request_activity_report->countries( $filters, $period_seconds );
-		$country_options = $this->request_activity_report->country_options( $this->request_activity_filter_input->country_option_filters( $filters ), $period_seconds );
+		$filters         = $this->request_log_filter_input->read();
+		$total_items     = $this->request_log_report->count( $filters, $period_seconds );
+		$paginator       = $this->create_paginator( $total_items, self::PER_PAGE, self::PAGE_SLUG, $period, $this->request_log_filter_input->query_args( $filters ) );
+		$rows            = $this->request_log_report->rows( $filters, $period_seconds, self::PER_PAGE, $paginator->offset() );
+		$countries       = $this->request_log_report->countries( $filters, $period_seconds );
+		$country_options = $this->request_log_report->country_options( $this->request_log_filter_input->country_option_filters( $filters ), $period_seconds );
 		?>
 		<div class="wrap vwfw-admin">
-			<h1>OpenWPSecurity - Firewall Request Handling</h1>
-			<p>Every request that reaches WordPress is logged here. Frontend page visits are included as <strong>Frontend Page</strong> requests, rate limits are endpoint-local, <strong>Frontend Page</strong> and <strong>WP Login</strong> return an HTTP 429 page when exceeded, and any active request-handling temporary block denies all request types.</p>
-			<?php $this->render_page_tabs( 'openwpsecurity-firewall-request-handling' ); ?>
-			<?php $this->render_period_form( 'openwpsecurity-firewall-request-handling', $period, true, $this->request_activity_filter_input->query_args( $filters ) ); ?>
+			<h1>OpenWPSecurity - Firewall Request Log</h1>
+			<p>Inspect requests that reached WordPress. Current enforcement behavior is configured on the <strong>Policies</strong> page.</p>
+			<?php $this->render_page_tabs( self::PAGE_SLUG ); ?>
+			<?php $this->render_period_form( self::PAGE_SLUG, $period, true, $this->request_log_filter_input->query_args( $filters ) ); ?>
 			<?php $this->render_request_filters_form( $filters, $country_options ); ?>
 
 			<?php $this->country_distribution_panel->render( $countries, 'Requests by Country', 'Requests' ); ?>
@@ -68,14 +69,13 @@ final class RequestHandlingPage extends AbstractAdminPage {
 				'No requests found for this period.',
 				'widefat striped fixed vwfw-request-log-table',
 				function ( array $row ): void {
-					$details = $this->event_report_formatter->details_from_json( (string) ( $row['details'] ?? '' ) );
 					?>
 					<td><?php echo esc_html( $this->event_report_formatter->admin_datetime( (string) $row['created_at'] ) ); ?></td>
-					<td><?php echo esc_html( $this->event_report_formatter->request_type_label( (string) ( $details['request_type'] ?? '' ) ) ); ?></td>
-					<td><?php echo esc_html( (string) ( $details['method'] ?? '' ) ); ?></td>
+					<td><?php echo esc_html( $this->event_report_formatter->request_type_label( (string) ( $row['request_type'] ?? '' ) ) ); ?></td>
+					<td><?php echo esc_html( (string) ( $row['method'] ?? '' ) ); ?></td>
 					<td><?php echo esc_html( (string) $row['ip_address'] ); ?></td>
 					<td><?php echo esc_html( trim( (string) $row['country_code'] . ' ' . (string) $row['country_name'] ) ); ?></td>
-					<td><?php echo esc_html( ! empty( $details['is_frontend_html'] ) ? 'Yes' : 'No' ); ?></td>
+					<td><?php echo esc_html( ! empty( $row['is_frontend_html'] ) ? 'Yes' : 'No' ); ?></td>
 					<td class="vwfw-break"><?php echo esc_html( (string) $row['request_uri'] ); ?></td>
 					<td class="vwfw-break"><?php echo esc_html( (string) $row['user_agent'] ); ?></td>
 					<?php
@@ -94,7 +94,7 @@ final class RequestHandlingPage extends AbstractAdminPage {
 		}
 
 		$this->filter_form_renderer->render(
-			'openwpsecurity-firewall-request-handling',
+			self::PAGE_SLUG,
 			$this->current_period( 'all' ),
 			array(
 				array(
@@ -160,7 +160,7 @@ final class RequestHandlingPage extends AbstractAdminPage {
 					),
 				),
 			),
-			admin_url( 'admin.php?page=openwpsecurity-firewall-request-handling&period=' . $this->current_period( 'all' ) )
+			admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&period=' . $this->current_period( 'all' ) )
 		);
 	}
 }

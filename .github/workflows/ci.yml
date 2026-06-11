@@ -36,6 +36,12 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
 
+      - name: Validate Composer metadata
+        run: composer validate --strict --no-check-publish
+
+      - name: Audit Composer dependencies
+        run: composer audit --locked
+
       - name: Install npm dependencies
         run: npm ci
 
@@ -44,6 +50,9 @@ jobs:
 
       - name: Verify built CSS files exist
         run: test -f assets/css/admin.css && test -f assets/css/runtime.css
+
+      - name: Verify compiled CSS is current
+        run: git diff --exit-code -- assets/css
 
       - name: Run PHPCS
         run: composer phpcs

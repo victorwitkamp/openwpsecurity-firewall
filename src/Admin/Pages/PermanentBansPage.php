@@ -30,13 +30,13 @@ final class PermanentBansPage extends AbstractAdminPage {
 		$this->assert_page_access();
 
 		$notice      = $this->permanent_bans_panel->handle_actions( self::NONCE_ACTION );
-		$rows        = $this->permanent_bans_panel->sorted_rows();
-		$total_items = count( $rows );
+		$total_items = $this->permanent_bans_panel->count_bans();
 		$paginator   = $this->create_paginator( $total_items, self::PER_PAGE, self::PAGE_SLUG );
-		$rows        = array_slice( $rows, $paginator->offset(), self::PER_PAGE );
+		$rows        = $this->permanent_bans_panel->get_bans( self::PER_PAGE, $paginator->offset() );
 		?>
 		<div class="wrap vwfw-admin">
 			<h1>OpenWPSecurity - Firewall Permanent Bans</h1>
+			<p>Manage IP addresses that Firewall blocks across every request type.</p>
 			<?php $this->render_page_tabs( self::PAGE_SLUG ); ?>
 			<?php $this->permanent_bans_panel->render_notice( $notice ); ?>
 

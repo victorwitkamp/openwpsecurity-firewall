@@ -27,22 +27,27 @@ final class Settings extends OptionBackedSettingsStore {
 		return self::OPTION_NAME;
 	}
 
-	public function sanitize_firewall_submission( array $submission ): array {
+	public function sanitize_policy_submission( array $submission ): array {
 		return array_merge(
 			array(
 				'captcha_failure_threshold'      => max( 0, (int) ( $submission['captcha_failure_threshold'] ?? 3 ) ),
 				'captcha_failure_window_minutes' => max( 1, (int) ( $submission['captcha_failure_window_minutes'] ?? 10 ) ),
 				'captcha_pass_minutes'           => max( 1, (int) ( $submission['captcha_pass_minutes'] ?? 30 ) ),
-				'event_retention_days'           => max( 0, (int) ( $submission['event_retention_days'] ?? 90 ) ),
-				'trusted_ip_headers'             => $this->input_sanitizer->headers( (string) ( $submission['trusted_ip_headers'] ?? 'REMOTE_ADDR' ) ),
-				'whitelist_ips'                  => $this->input_sanitizer->ip_addresses(
-					$this->input_sanitizer->lines( (string) ( $submission['whitelist_ips'] ?? '' ) )
-				),
-				'debug_bar_enabled'              => empty( $submission['debug_bar_enabled'] ) ? 0 : 1,
-				'enable_remote_geoip'            => empty( $submission['enable_remote_geoip'] ) ? 0 : 1,
-				'enforce_loginprotection_bans'   => empty( $submission['enforce_loginprotection_bans'] ) ? 0 : 1,
 			),
 			$this->sanitize_request_handling_settings( $submission )
+		);
+	}
+
+	public function sanitize_runtime_submission( array $submission ): array {
+		return array(
+			'event_retention_days'         => max( 0, (int) ( $submission['event_retention_days'] ?? 90 ) ),
+			'trusted_ip_headers'           => $this->input_sanitizer->headers( (string) ( $submission['trusted_ip_headers'] ?? 'REMOTE_ADDR' ) ),
+			'whitelist_ips'                => $this->input_sanitizer->ip_addresses(
+				$this->input_sanitizer->lines( (string) ( $submission['whitelist_ips'] ?? '' ) )
+			),
+			'debug_bar_enabled'            => empty( $submission['debug_bar_enabled'] ) ? 0 : 1,
+			'enable_remote_geoip'          => empty( $submission['enable_remote_geoip'] ) ? 0 : 1,
+			'enforce_loginprotection_bans' => empty( $submission['enforce_loginprotection_bans'] ) ? 0 : 1,
 		);
 	}
 

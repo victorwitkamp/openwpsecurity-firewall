@@ -6,6 +6,7 @@ namespace VictorWitkamp\OpenWPSecurity\Firewall\Security;
 
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 use VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics\RequestDebugState;
+use VictorWitkamp\OpenWPSecurity\Core\Database\WordPressTableReference;
 use VictorWitkamp\OpenWPSecurity\Core\Http\RequestContext;
 use VictorWitkamp\OpenWPSecurity\Core\Http\Response\RequestDenialResponder;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventLogger;
@@ -19,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 final class RequestGuard {
-	private const LOGINPROTECTION_BANS_OPTION_NAME = 'openwpsecurity_loginprotection_permanent_bans';
+	private const LOGINPROTECTION_BAN_TABLE = 'openwpsecurity_loginprotection_permanent_bans';
 
 	private Settings $settings;
 	private PermanentBanStore $ban_store;
@@ -162,17 +163,56 @@ final class RequestGuard {
 			return array();
 		}
 
-		$bans = get_option( self::LOGINPROTECTION_BANS_OPTION_NAME, array() );
-		$bans = is_array( $bans ) ? $bans : array();
+		global $wpdb;
 
-		if ( empty( $bans[ $ip ] ) || ! is_array( $bans[ $ip ] ) ) {
+		$table = ( new WordPressTableReference( self::LOGINPROTECTION_BAN_TABLE ) )->name();
+
+		if ( ! $this->table_exists( $table ) ) {
 			return array();
 		}
 
-		$ban                    = $bans[ $ip ];
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is generated internally from $wpdb->prefix.
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT created_at, ip_address, country_code, country_name, source, reason, request_uri, user_agent, evidence_json FROM {$table} WHERE ip_address = %s LIMIT 1",
+				$ip
+			),
+			ARRAY_A
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( ! is_array( $row ) ) {
+			return array();
+		}
+
+		$ban                    = array(
+			'ip_address'    => (string) ( $row['ip_address'] ?? '' ),
+			'banned_at'     => (string) ( $row['created_at'] ?? '' ),
+			'created_at'    => (string) ( $row['created_at'] ?? '' ),
+			'country_code'  => (string) ( $row['country_code'] ?? '' ),
+			'country_name'  => (string) ( $row['country_name'] ?? '' ),
+			'source'        => (string) ( $row['source'] ?? '' ),
+			'reason'        => (string) ( $row['reason'] ?? '' ),
+			'request_uri'   => (string) ( $row['request_uri'] ?? '' ),
+			'user_agent'    => (string) ( $row['user_agent'] ?? '' ),
+			'evidence_json' => (string) ( $row['evidence_json'] ?? '' ),
+		);
 		$ban['enforced_source'] = 'login_protection';
 
 		return $ban;
+	}
+
+	private function table_exists( string $table ): bool {
+		global $wpdb;
+
+		$match = $wpdb->get_var(
+			$wpdb->prepare(
+				'SHOW TABLES LIKE %s',
+				$table
+			)
+		);
+
+		return is_string( $match ) && $match === $table;
 	}
 
 	private function permanent_ban_message( array $ban ): string {

@@ -2,6 +2,7 @@
 /node_modules/
 /coverage/
 /dist/
+/.playwright-mcp/
 *.md
 /.phpunit.result.cache
 /.sass-cache/

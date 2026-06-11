@@ -32,8 +32,8 @@ final class RequestHandlingActionDescriber {
 
 		if ( $this->request_handling_catalog->uses_rate_limit_page( $request_type ) ) {
 			if ( $captcha_enabled && $this->request_handling_catalog->supports_captcha( $request_type ) ) {
-				return 'Returns HTTP 429 and renders a rate-limit page with shared captcha. Solving the captcha sets a temporary bypass cookie. Repeated unsolved captcha pages create a global temporary block'
-					. $this->captcha_page_threshold_fragment( $captcha_page_threshold ) . ' for ' . $temporary_block_minutes . ' minute(s). Repeated captcha failures use the same temporary block. Permanent bans can be created'
+				return 'Returns HTTP 429 and renders a rate-limit page with shared captcha. Solving the captcha sets a temporary bypass cookie. Repeated unsolved captcha pages create a temporary ban'
+					. $this->captcha_page_threshold_fragment( $captcha_page_threshold ) . ' for ' . $temporary_block_minutes . ' minute(s). Repeated captcha failures use the same temporary ban. Permanent bans can be created'
 					. $this->active_denial_fragment( $active_denial_threshold ) . $this->permanent_ban_tail( $permanent_ban_threshold ) . '.';
 			}
 
@@ -41,11 +41,11 @@ final class RequestHandlingActionDescriber {
 		}
 
 		if ( $temporary_block_enabled ) {
-			return 'Creates a global temporary block and returns an immediate firewall denial for the current request, typically HTTP 403 with a firewall message. The same temporary block then denies all request types until it expires. Permanent bans can be created'
+			return 'Creates a temporary ban and returns an immediate firewall denial for the current request, typically HTTP 403 with a firewall message. The same temporary ban then denies all request types until it expires. Permanent bans can be created'
 				. $this->active_denial_fragment( $active_denial_threshold ) . $this->permanent_ban_tail( $permanent_ban_threshold ) . '.';
 		}
 
-		return 'Returns HTTP 429 with a firewall message for this endpoint only. No global temporary block is created from the rate-limit threshold.';
+		return 'Returns HTTP 429 with a firewall message for this endpoint only. No temporary ban is created from the rate-limit threshold.';
 	}
 
 	public function captcha_note( array $settings, string $request_type ): string {
@@ -65,7 +65,7 @@ final class RequestHandlingActionDescriber {
 			return '';
 		}
 
-		return ' or after ' . $permanent_ban_threshold . ' repeated temporary block(s)';
+		return ' or after ' . $permanent_ban_threshold . ' repeated temporary ban(s)';
 	}
 
 	private function active_denial_fragment( int $active_denial_threshold ): string {
@@ -73,7 +73,7 @@ final class RequestHandlingActionDescriber {
 			return '';
 		}
 
-		return ' after ' . $active_denial_threshold . ' denied request(s) during an active temporary block';
+		return ' after ' . $active_denial_threshold . ' denied request(s) during an active temporary ban';
 	}
 
 	private function captcha_page_threshold_fragment( int $captcha_page_threshold ): string {

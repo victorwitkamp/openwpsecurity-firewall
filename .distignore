@@ -1,0 +1,16 @@
+.git/
+.github/
+.playwright-mcp/
+.gitattributes
+.gitignore
+.distignore
+dist/
+node_modules/
+assets/scss/
+composer.json
+composer.lock
+package.json
+package-lock.json
+phpcs.xml.dist
+*.md
+.wordpress-org/

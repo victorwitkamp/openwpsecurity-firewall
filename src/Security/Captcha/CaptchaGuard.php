@@ -13,7 +13,7 @@ use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventLogger;
 use VictorWitkamp\OpenWPSecurity\Firewall\Runtime\TransientKeyBuilder;
 use VictorWitkamp\OpenWPSecurity\Core\Security\Ban\PermanentBanStore;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestHandlingCatalog;
-use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestTemporaryBlockCreator;
+use VictorWitkamp\OpenWPSecurity\Firewall\Security\Ban\TemporaryBanCreator;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -31,7 +31,7 @@ final class CaptchaGuard {
 	private TransientKeyBuilder $transient_key_builder;
 	private PermanentBanStore $ban_store;
 	private RequestHandlingCatalog $request_handling_catalog;
-	private RequestTemporaryBlockCreator $request_temporary_block_creator;
+	private TemporaryBanCreator $temporary_ban_creator;
 
 	public function __construct(
 		Settings $settings,
@@ -43,18 +43,18 @@ final class CaptchaGuard {
 		TransientKeyBuilder $transient_key_builder,
 		PermanentBanStore $ban_store,
 		RequestHandlingCatalog $request_handling_catalog,
-		RequestTemporaryBlockCreator $request_temporary_block_creator
+		TemporaryBanCreator $temporary_ban_creator
 	) {
-		$this->settings                        = $settings;
-		$this->event_logger                    = $event_logger;
-		$this->denial_responder                = $denial_responder;
-		$this->response_dispatcher             = $response_dispatcher;
-		$this->debug_state                     = $debug_state;
-		$this->request_context                 = $request_context;
-		$this->transient_key_builder           = $transient_key_builder;
-		$this->ban_store                       = $ban_store;
-		$this->request_handling_catalog        = $request_handling_catalog;
-		$this->request_temporary_block_creator = $request_temporary_block_creator;
+		$this->settings                 = $settings;
+		$this->event_logger             = $event_logger;
+		$this->denial_responder         = $denial_responder;
+		$this->response_dispatcher      = $response_dispatcher;
+		$this->debug_state              = $debug_state;
+		$this->request_context          = $request_context;
+		$this->transient_key_builder    = $transient_key_builder;
+		$this->ban_store                = $ban_store;
+		$this->request_handling_catalog = $request_handling_catalog;
+		$this->temporary_ban_creator    = $temporary_ban_creator;
 	}
 
 	public function respond_to_rate_limited_request( string $ip, string $request_type, int $hit_count, int $rate_limit_threshold, int $rate_limit_window_seconds ): void {
@@ -146,7 +146,7 @@ final class CaptchaGuard {
 		);
 
 		if ( $create_temporary_block ) {
-			$result = $this->request_temporary_block_creator->create_from_captcha_challenge_volume(
+			$result = $this->temporary_ban_creator->create_from_captcha_challenge_volume(
 				$ip,
 				$request_type,
 				$challenge_state['count'],
@@ -389,7 +389,7 @@ final class CaptchaGuard {
 			$this->debug_state->add_condition( 'Captcha validation failed.' );
 
 			if ( $this->should_create_temporary_block_after_failures( $failure_state['count'], (int) $settings['captcha_failure_threshold'] ) ) {
-				$result = $this->request_temporary_block_creator->create_from_captcha_failures(
+				$result = $this->temporary_ban_creator->create_from_captcha_failures(
 					$ip,
 					$request_type,
 					$failure_state['count'],

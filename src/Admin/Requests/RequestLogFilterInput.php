@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-final class RequestActivityFilterInput {
+final class RequestLogFilterInput {
 	private RequestContext $request_context;
 	private EventReportFormatter $event_report_formatter;
 

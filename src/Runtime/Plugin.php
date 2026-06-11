@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Runtime;
 
 use VictorWitkamp\OpenWPSecurity\Core\Runtime\PluginLifecycle;
+use VictorWitkamp\OpenWPSecurity\Core\Database\CreatedAtRetention;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Navigation\AdminMenu;
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
 use VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics\DebugBar;
-use VictorWitkamp\OpenWPSecurity\Core\Logging\EventRetention;
-use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventSchema;
+use VictorWitkamp\OpenWPSecurity\Firewall\Logging\RequestLogRepository;
+use VictorWitkamp\OpenWPSecurity\Firewall\Logging\SecurityIncidentRepository;
 use VictorWitkamp\OpenWPSecurity\Core\Security\Ban\PermanentBanStore;
+use VictorWitkamp\OpenWPSecurity\Core\Security\Ban\TemporaryBanCleanup;
+use VictorWitkamp\OpenWPSecurity\Firewall\Security\Ban\TemporaryBanCounterStore;
+use VictorWitkamp\OpenWPSecurity\Firewall\Security\Ban\TemporaryBanRepository;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestGuard;
-use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestTemporaryBlockStore;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,10 +23,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class Plugin implements PluginLifecycle {
 	private Settings $settings;
-	private EventSchema $event_schema;
-	private EventRetention $event_retention;
+	private RequestLogRepository $request_logs;
+	private SecurityIncidentRepository $security_incidents;
+	private CreatedAtRetention $retention;
 	private PermanentBanStore $ban_store;
-	private RequestTemporaryBlockStore $request_temporary_block_store;
+	private TemporaryBanRepository $temporary_ban_repository;
+	private TemporaryBanCounterStore $temporary_ban_counter_store;
+	private TemporaryBanCleanup $temporary_ban_cleanup;
 	private RequestGuard $request_guard;
 	private DebugBar $debug_bar;
 	private AdminMenu $admin_menu;
@@ -31,31 +37,39 @@ final class Plugin implements PluginLifecycle {
 
 	public function __construct(
 		Settings $settings,
-		EventSchema $event_schema,
-		EventRetention $event_retention,
+		RequestLogRepository $request_logs,
+		SecurityIncidentRepository $security_incidents,
+		CreatedAtRetention $retention,
 		PermanentBanStore $ban_store,
-		RequestTemporaryBlockStore $request_temporary_block_store,
+		TemporaryBanRepository $temporary_ban_repository,
+		TemporaryBanCounterStore $temporary_ban_counter_store,
+		TemporaryBanCleanup $temporary_ban_cleanup,
 		RequestGuard $request_guard,
 		DebugBar $debug_bar,
 		AdminMenu $admin_menu
 	) {
-		$this->settings                      = $settings;
-		$this->event_schema                  = $event_schema;
-		$this->event_retention               = $event_retention;
-		$this->ban_store                     = $ban_store;
-		$this->request_temporary_block_store = $request_temporary_block_store;
-		$this->request_guard                 = $request_guard;
-		$this->debug_bar                     = $debug_bar;
-		$this->admin_menu                    = $admin_menu;
+		$this->settings                    = $settings;
+		$this->request_logs                = $request_logs;
+		$this->security_incidents          = $security_incidents;
+		$this->retention                   = $retention;
+		$this->ban_store                   = $ban_store;
+		$this->temporary_ban_repository    = $temporary_ban_repository;
+		$this->temporary_ban_counter_store = $temporary_ban_counter_store;
+		$this->temporary_ban_cleanup       = $temporary_ban_cleanup;
+		$this->request_guard               = $request_guard;
+		$this->debug_bar                   = $debug_bar;
+		$this->admin_menu                  = $admin_menu;
 	}
 
 	public function activate(): void {
 		$this->prepare_storage();
-		$this->event_retention->activate();
+		$this->retention->activate();
+		$this->temporary_ban_cleanup->activate();
 	}
 
 	public function deactivate(): void {
-		$this->event_retention->deactivate();
+		$this->retention->deactivate();
+		$this->temporary_ban_cleanup->deactivate();
 	}
 
 	public function initialize_runtime(): void {
@@ -66,7 +80,8 @@ final class Plugin implements PluginLifecycle {
 		$this->prepare_storage();
 		$this->request_guard->register_hooks();
 		$this->debug_bar->register_hooks();
-		$this->event_retention->register_hooks();
+		$this->retention->register_hooks();
+		$this->temporary_ban_cleanup->register_hooks();
 
 		if ( is_admin() ) {
 			$this->admin_menu->register_hooks();
@@ -78,7 +93,9 @@ final class Plugin implements PluginLifecycle {
 	private function prepare_storage(): void {
 		$this->settings->ensure_defaults();
 		$this->ban_store->ensure_storage();
-		$this->request_temporary_block_store->ensure_storage();
-		$this->event_schema->maybe_upgrade_schema();
+		$this->temporary_ban_repository->maybe_upgrade_schema();
+		$this->temporary_ban_counter_store->maybe_upgrade_schema();
+		$this->request_logs->maybe_upgrade_schema();
+		$this->security_incidents->maybe_upgrade_schema();
 	}
 }

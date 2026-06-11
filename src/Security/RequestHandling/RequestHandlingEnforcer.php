@@ -8,6 +8,8 @@ use VictorWitkamp\OpenWPSecurity\Core\Http\RequestContext;
 use VictorWitkamp\OpenWPSecurity\Core\Http\Response\RequestDenialResponder;
 use VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics\RequestDebugState;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventLogger;
+use VictorWitkamp\OpenWPSecurity\Firewall\Security\Ban\TemporaryBanCreator;
+use VictorWitkamp\OpenWPSecurity\Firewall\Security\Ban\TemporaryBanRepository;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\Captcha\CaptchaGuard;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -20,23 +22,23 @@ final class RequestHandlingEnforcer {
 	private RequestDebugState $debug_state;
 	private RequestHandlingResolver $request_handling_resolver;
 	private RequestRateLimitStore $request_rate_limit_store;
-	private RequestTemporaryBlockStore $request_temporary_block_store;
+	private TemporaryBanRepository $temporary_ban_repository;
 	private RequestContext $request_context;
 	private RequestHandlingCatalog $request_handling_catalog;
 	private CaptchaGuard $captcha_guard;
-	private RequestTemporaryBlockCreator $request_temporary_block_creator;
+	private TemporaryBanCreator $temporary_ban_creator;
 
-	public function __construct( EventLogger $event_logger, RequestDenialResponder $denial_responder, RequestDebugState $debug_state, RequestHandlingResolver $request_handling_resolver, RequestRateLimitStore $request_rate_limit_store, RequestTemporaryBlockStore $request_temporary_block_store, RequestContext $request_context, RequestHandlingCatalog $request_handling_catalog, CaptchaGuard $captcha_guard, RequestTemporaryBlockCreator $request_temporary_block_creator ) {
-		$this->event_logger                    = $event_logger;
-		$this->denial_responder                = $denial_responder;
-		$this->debug_state                     = $debug_state;
-		$this->request_handling_resolver       = $request_handling_resolver;
-		$this->request_rate_limit_store        = $request_rate_limit_store;
-		$this->request_temporary_block_store   = $request_temporary_block_store;
-		$this->request_context                 = $request_context;
-		$this->request_handling_catalog        = $request_handling_catalog;
-		$this->captcha_guard                   = $captcha_guard;
-		$this->request_temporary_block_creator = $request_temporary_block_creator;
+	public function __construct( EventLogger $event_logger, RequestDenialResponder $denial_responder, RequestDebugState $debug_state, RequestHandlingResolver $request_handling_resolver, RequestRateLimitStore $request_rate_limit_store, TemporaryBanRepository $temporary_ban_repository, RequestContext $request_context, RequestHandlingCatalog $request_handling_catalog, CaptchaGuard $captcha_guard, TemporaryBanCreator $temporary_ban_creator ) {
+		$this->event_logger              = $event_logger;
+		$this->denial_responder          = $denial_responder;
+		$this->debug_state               = $debug_state;
+		$this->request_handling_resolver = $request_handling_resolver;
+		$this->request_rate_limit_store  = $request_rate_limit_store;
+		$this->temporary_ban_repository  = $temporary_ban_repository;
+		$this->request_context           = $request_context;
+		$this->request_handling_catalog  = $request_handling_catalog;
+		$this->captcha_guard             = $captcha_guard;
+		$this->temporary_ban_creator     = $temporary_ban_creator;
 	}
 
 	public function enforce_for_request( string $ip, string $request_type ): void {
@@ -57,8 +59,8 @@ final class RequestHandlingEnforcer {
 
 		$request_handling         = $this->request_handling_resolver->for_request_type( $request_type );
 		$temporary_block_settings = $this->request_handling_resolver->temporary_block_settings();
-		$active_temporary_block   = $this->request_temporary_block_store->active_temporary_block( $ip );
-		$temporary_block_count    = $this->request_temporary_block_store->temporary_block_count( $ip );
+		$active_temporary_block   = $this->temporary_ban_repository->active_temporary_ban( $ip );
+		$temporary_block_count    = (int) ( $active_temporary_block['temporary_ban_count'] ?? 0 );
 
 		$this->write_request_handling_debug(
 			$request_type,
@@ -75,7 +77,7 @@ final class RequestHandlingEnforcer {
 		);
 
 		if ( ! empty( $active_temporary_block ) ) {
-			$this->deny_active_temporary_block( $ip, $request_type, $active_temporary_block, $temporary_block_count, $temporary_block_settings );
+			$this->deny_active_temporary_ban( $ip, $request_type, $active_temporary_block, $temporary_block_count, $temporary_block_settings );
 		}
 
 		if ( array() === $request_handling ) {
@@ -156,7 +158,7 @@ final class RequestHandlingEnforcer {
 			);
 		}
 
-		$temporary_block_result = $this->request_temporary_block_creator->create_from_rate_limit(
+		$temporary_block_result = $this->temporary_ban_creator->create_from_rate_limit(
 			$ip,
 			$request_type,
 			$hits,
@@ -273,8 +275,8 @@ final class RequestHandlingEnforcer {
 		return $this->request_context->is_ip_whitelisted( $ip );
 	}
 
-	private function deny_active_temporary_block( string $ip, string $request_type, array $active_temporary_block, int $temporary_block_count, array $temporary_block_settings ): void {
-		$active_temporary_block = $this->request_temporary_block_store->record_active_temporary_block_denial( $ip, $request_type );
+	private function deny_active_temporary_ban( string $ip, string $request_type, array $active_temporary_block, int $temporary_block_count, array $temporary_block_settings ): void {
+		$active_temporary_block = $this->temporary_ban_repository->record_active_temporary_ban_denial( $ip, $request_type );
 
 		if ( array() === $active_temporary_block ) {
 			return;
@@ -317,8 +319,8 @@ final class RequestHandlingEnforcer {
 		);
 		$this->debug_state->add_condition( 'Request handling matched an active temporary block.' );
 
-		if ( $this->request_temporary_block_creator->create_permanent_ban_after_active_temporary_block_denials( $ip, $request_type, $trigger_request_type, $active_block_denial_count, $active_block_denials_before_permanent_ban, $temporary_block_count ) ) {
-			$this->request_temporary_block_store->clear_active_temporary_block( $ip );
+		if ( $this->temporary_ban_creator->create_permanent_ban_after_active_temporary_ban_denials( $ip, $request_type, $trigger_request_type, $active_block_denial_count, $active_block_denials_before_permanent_ban, $temporary_block_count ) ) {
+			$this->temporary_ban_repository->remove_temporary_ban( $ip );
 			$this->write_request_handling_debug(
 				$request_type,
 				array(
