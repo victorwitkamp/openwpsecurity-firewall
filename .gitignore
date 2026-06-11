@@ -4,6 +4,7 @@
 /dist/
 /.playwright-mcp/
 *.md
+!README.md
 /.phpunit.result.cache
 /.sass-cache/
 npm-debug.log*
