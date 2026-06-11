@@ -10,6 +10,6 @@
 		"lint:php": "composer phpcs"
 	},
 	"devDependencies": {
-		"sass": "^1.94.0"
+		"sass": "^1.100.0"
 	}
 }
