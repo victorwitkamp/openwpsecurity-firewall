@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: OpenWPSecurity - Firewall
- * Plugin URI:  https://victorwitkamp.nl/
+ * Plugin URI:  https://github.com/victorwitkamp/openwpsecurity-firewall
  * Description: WordPress request handling, captcha challenges, permanent bans, event logging, and a security dashboard.
  * Version:     0.3.0
  * Requires at least: 6.5

@@ -35,18 +35,18 @@ final class TemporaryBansPage extends AbstractAdminPage {
 		$rows   = $this->temporary_bans_panel->sorted_rows( $this->temporary_ban_repository );
 		?>
 		<div class="wrap vwfw-admin">
-			<h1>OpenWPSecurity - Firewall Temporary Bans</h1>
-			<p>Manage IP addresses currently denied across all request types by Firewall.</p>
+			<h1><?php esc_html_e( 'OpenWPSecurity - Firewall Temporary Bans', 'openwpsecurity-firewall' ); ?></h1>
+			<p><?php esc_html_e( 'Manage IP addresses currently denied across all request types by Firewall.', 'openwpsecurity-firewall' ); ?></p>
 			<?php $this->render_page_tabs( self::PAGE_SLUG ); ?>
 			<?php $this->temporary_bans_panel->render_notice( $notice ); ?>
 			<?php
 			$this->temporary_bans_panel->render(
 				self::PAGE_SLUG,
 				self::NONCE_ACTION,
-				'Currently Temporarily Banned IP Addresses',
-				'Firewall temporary bans deny every request type until they expire or are manually removed.',
+				__( 'Currently Temporarily Banned IP Addresses', 'openwpsecurity-firewall' ),
+				__( 'Firewall temporary bans deny every request type until they expire or are manually removed.', 'openwpsecurity-firewall' ),
 				$rows,
-				'No Firewall temporary bans are currently active.'
+				__( 'No Firewall temporary bans are currently active.', 'openwpsecurity-firewall' )
 			);
 			?>
 		</div>

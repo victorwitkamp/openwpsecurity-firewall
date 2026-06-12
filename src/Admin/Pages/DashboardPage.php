@@ -46,8 +46,8 @@ final class DashboardPage extends AbstractAdminPage {
 		$data = $this->load_dashboard_data( $period );
 		?>
 		<div class="wrap vwfw-admin vwfw-dashboard">
-			<h1>OpenWPSecurity - Firewall</h1>
-			<p>Selected-range firewall activity and current enforcement state.</p>
+			<h1><?php esc_html_e( 'OpenWPSecurity - Firewall', 'openwpsecurity-firewall' ); ?></h1>
+			<p><?php esc_html_e( 'Selected-range firewall activity and current enforcement state.', 'openwpsecurity-firewall' ); ?></p>
 
 			<?php $this->render_page_tabs( 'openwpsecurity-firewall' ); ?>
 			<?php $this->render_period_form( 'openwpsecurity-firewall', $period, false ); ?>
@@ -73,14 +73,14 @@ final class DashboardPage extends AbstractAdminPage {
 		$summary = $data['summary'];
 		?>
 		<div class="vwfw-cards">
-			<?php $this->render_summary_card( 'Request Log Entries', (int) $summary['total_requests'] ); ?>
-			<?php $this->render_summary_card( 'Frontend Page Visits', (int) $summary['page_visits'] ); ?>
-			<?php $this->render_summary_card( 'Security Incidents', (int) $summary['security_incidents'] ); ?>
-			<?php $this->render_summary_card( 'Unique IPs', (int) $summary['unique_ips'] ); ?>
-			<?php $this->render_summary_card( 'Temporary Bans Created', (int) $summary['temporary_blocks'] ); ?>
-			<?php $this->render_summary_card( 'Captcha Triggered', (int) $summary['captcha_required'] ); ?>
-			<?php $this->render_summary_card( 'Captcha Solved', (int) $summary['captcha_passed'] ); ?>
-			<?php $this->render_summary_card( 'Permanent Bans Created', (int) $summary['permanent_bans'] ); ?>
+			<?php $this->render_summary_card( __( 'Request Log Entries', 'openwpsecurity-firewall' ), (int) $summary['total_requests'] ); ?>
+			<?php $this->render_summary_card( __( 'Frontend Page Visits', 'openwpsecurity-firewall' ), (int) $summary['page_visits'] ); ?>
+			<?php $this->render_summary_card( __( 'Security Incidents', 'openwpsecurity-firewall' ), (int) $summary['security_incidents'] ); ?>
+			<?php $this->render_summary_card( __( 'Unique IPs', 'openwpsecurity-firewall' ), (int) $summary['unique_ips'] ); ?>
+			<?php $this->render_summary_card( __( 'Temporary Bans Created', 'openwpsecurity-firewall' ), (int) $summary['temporary_blocks'] ); ?>
+			<?php $this->render_summary_card( __( 'Captcha Triggered', 'openwpsecurity-firewall' ), (int) $summary['captcha_required'] ); ?>
+			<?php $this->render_summary_card( __( 'Captcha Solved', 'openwpsecurity-firewall' ), (int) $summary['captcha_passed'] ); ?>
+			<?php $this->render_summary_card( __( 'Permanent Bans Created', 'openwpsecurity-firewall' ), (int) $summary['permanent_bans'] ); ?>
 		</div>
 		<?php
 	}
@@ -103,35 +103,35 @@ final class DashboardPage extends AbstractAdminPage {
 		<section class="vwfw-current-state">
 			<div class="vwfw-section-heading">
 				<div>
-					<h2>Current Enforcement</h2>
-					<p class="description">Live state and policy status. These values are not affected by the selected reporting range.</p>
+					<h2><?php esc_html_e( 'Current Enforcement', 'openwpsecurity-firewall' ); ?></h2>
+					<p class="description"><?php esc_html_e( 'Live state and policy status. These values are not affected by the selected reporting range.', 'openwpsecurity-firewall' ); ?></p>
 				</div>
 			</div>
 			<div class="vwfw-state-grid vwfw-state-grid--compact">
 				<a class="vwfw-state-item" href="<?php echo esc_url( $temporary_bans_url ); ?>">
-					<span>Current Temporary Bans</span>
+					<span><?php esc_html_e( 'Current Temporary Bans', 'openwpsecurity-firewall' ); ?></span>
 					<strong><?php echo esc_html( number_format_i18n( (int) $data['temporary_bans'] ) ); ?></strong>
-					<small>Open management page</small>
+					<small><?php esc_html_e( 'Open management page', 'openwpsecurity-firewall' ); ?></small>
 				</a>
 				<a class="vwfw-state-item" href="<?php echo esc_url( $permanent_bans_url ); ?>">
-					<span>Current Permanent Bans</span>
+					<span><?php esc_html_e( 'Current Permanent Bans', 'openwpsecurity-firewall' ); ?></span>
 					<strong><?php echo esc_html( number_format_i18n( (int) $data['permanent_bans'] ) ); ?></strong>
-					<small>Open management page</small>
+					<small><?php esc_html_e( 'Open management page', 'openwpsecurity-firewall' ); ?></small>
 				</a>
 				<a class="vwfw-state-item" href="<?php echo esc_url( $policies_url ); ?>">
-					<span>Endpoint Policies</span>
-					<strong><?php echo esc_html( number_format_i18n( $enabled_endpoint_policies ) ); ?> of <?php echo esc_html( number_format_i18n( count( $this->request_handling_catalog->targets() ) ) ); ?> enabled</strong>
-					<small>Review endpoint rate limits</small>
+					<span><?php esc_html_e( 'Endpoint Policies', 'openwpsecurity-firewall' ); ?></span>
+					<strong><?php echo esc_html( number_format_i18n( $enabled_endpoint_policies ) ); ?> <?php esc_html_e( 'of', 'openwpsecurity-firewall' ); ?> <?php echo esc_html( number_format_i18n( count( $this->request_handling_catalog->targets() ) ) ); ?> <?php esc_html_e( 'enabled', 'openwpsecurity-firewall' ); ?></strong>
+					<small><?php esc_html_e( 'Review endpoint rate limits', 'openwpsecurity-firewall' ); ?></small>
 				</a>
 				<a class="vwfw-state-item" href="<?php echo esc_url( $policies_url ); ?>">
-					<span>Shared Captcha</span>
-					<strong><?php echo esc_html( ! empty( $settings[ $captcha_enabled_key ] ) ? 'Enabled' : 'Disabled' ); ?></strong>
-					<small>Review challenge policy</small>
+					<span><?php esc_html_e( 'Shared Captcha', 'openwpsecurity-firewall' ); ?></span>
+					<strong><?php echo esc_html( ! empty( $settings[ $captcha_enabled_key ] ) ? __( 'Enabled', 'openwpsecurity-firewall' ) : __( 'Disabled', 'openwpsecurity-firewall' ) ); ?></strong>
+					<small><?php esc_html_e( 'Review challenge policy', 'openwpsecurity-firewall' ); ?></small>
 				</a>
 				<a class="vwfw-state-item" href="<?php echo esc_url( $policies_url ); ?>">
-					<span>Temporary Ban Policy</span>
-					<strong><?php echo esc_html( ! empty( $settings[ $temporary_block_enabled_key ] ) ? 'Enabled' : 'Disabled' ); ?></strong>
-					<small>Review escalation policy</small>
+					<span><?php esc_html_e( 'Temporary Ban Policy', 'openwpsecurity-firewall' ); ?></span>
+					<strong><?php echo esc_html( ! empty( $settings[ $temporary_block_enabled_key ] ) ? __( 'Enabled', 'openwpsecurity-firewall' ) : __( 'Disabled', 'openwpsecurity-firewall' ) ); ?></strong>
+					<small><?php esc_html_e( 'Review escalation policy', 'openwpsecurity-firewall' ); ?></small>
 				</a>
 			</div>
 		</section>

@@ -50,23 +50,32 @@ final class RequestLogPage extends AbstractAdminPage {
 		$country_options = $this->request_log_report->country_options( $this->request_log_filter_input->country_option_filters( $filters ), $period_seconds );
 		?>
 		<div class="wrap vwfw-admin">
-			<h1>OpenWPSecurity - Firewall Request Log</h1>
-			<p>Inspect requests that reached WordPress. Current enforcement behavior is configured on the <strong>Policies</strong> page.</p>
+			<h1><?php esc_html_e( 'OpenWPSecurity - Firewall Request Log', 'openwpsecurity-firewall' ); ?></h1>
+			<p><?php echo wp_kses_post( __( 'Inspect requests that reached WordPress. Current enforcement behavior is configured on the <strong>Policies</strong> page.', 'openwpsecurity-firewall' ) ); ?></p>
 			<?php $this->render_page_tabs( self::PAGE_SLUG ); ?>
 			<?php $this->render_period_form( self::PAGE_SLUG, $period, true, $this->request_log_filter_input->query_args( $filters ) ); ?>
 			<?php $this->render_request_filters_form( $filters, $country_options ); ?>
 
-			<?php $this->country_distribution_panel->render( $countries, 'Requests by Country', 'Requests' ); ?>
+			<?php $this->country_distribution_panel->render( $countries, __( 'Requests by Country', 'openwpsecurity-firewall' ), __( 'Requests', 'openwpsecurity-firewall' ) ); ?>
 
 			<?php
 			$this->record_table_panel->render(
-				'Request Log',
-				'This view includes frontend pages, login, admin, AJAX, REST API, XML-RPC, and wp-cron requests.',
+				__( 'Request Log', 'openwpsecurity-firewall' ),
+				__( 'This view includes frontend pages, login, admin, AJAX, REST API, XML-RPC, and wp-cron requests.', 'openwpsecurity-firewall' ),
 				$total_items,
 				$paginator->render(),
-				array( 'Time', 'Request Type', 'Method', 'IP', 'Country', 'Frontend HTML', 'Request URI', 'User Agent' ),
+				array(
+					__( 'Time', 'openwpsecurity-firewall' ),
+					__( 'Request Type', 'openwpsecurity-firewall' ),
+					__( 'Method', 'openwpsecurity-firewall' ),
+					__( 'IP', 'openwpsecurity-firewall' ),
+					__( 'Country', 'openwpsecurity-firewall' ),
+					__( 'Frontend HTML', 'openwpsecurity-firewall' ),
+					__( 'Request URI', 'openwpsecurity-firewall' ),
+					__( 'User Agent', 'openwpsecurity-firewall' ),
+				),
 				$rows,
-				'No requests found for this period.',
+				__( 'No requests found for this period.', 'openwpsecurity-firewall' ),
 				'widefat striped fixed vwfw-request-log-table',
 				function ( array $row ): void {
 					?>
@@ -75,7 +84,7 @@ final class RequestLogPage extends AbstractAdminPage {
 					<td><?php echo esc_html( (string) ( $row['method'] ?? '' ) ); ?></td>
 					<td><?php echo esc_html( (string) $row['ip_address'] ); ?></td>
 					<td><?php echo esc_html( trim( (string) $row['country_code'] . ' ' . (string) $row['country_name'] ) ); ?></td>
-					<td><?php echo esc_html( ! empty( $row['is_frontend_html'] ) ? 'Yes' : 'No' ); ?></td>
+					<td><?php echo esc_html( ! empty( $row['is_frontend_html'] ) ? __( 'Yes', 'openwpsecurity-firewall' ) : __( 'No', 'openwpsecurity-firewall' ) ); ?></td>
 					<td class="vwfw-break"><?php echo esc_html( (string) $row['request_uri'] ); ?></td>
 					<td class="vwfw-break"><?php echo esc_html( (string) $row['user_agent'] ); ?></td>
 					<?php
@@ -87,7 +96,7 @@ final class RequestLogPage extends AbstractAdminPage {
 	}
 
 	private function render_request_filters_form( array $filters, array $country_options ): void {
-		$country_select_options = array( '' => 'All Countries' );
+		$country_select_options = array( '' => __( 'All Countries', 'openwpsecurity-firewall' ) );
 
 		foreach ( $country_options as $country ) {
 			$country_select_options[ (string) $country['code'] ] = (string) $country['label'];
@@ -101,7 +110,7 @@ final class RequestLogPage extends AbstractAdminPage {
 					'type'    => 'select',
 					'id'      => 'vwfw-request-type',
 					'name'    => 'request_type',
-					'label'   => 'Request Type',
+					'label'   => __( 'Request Type', 'openwpsecurity-firewall' ),
 					'value'   => $filters['request_type'],
 					'options' => $this->event_report_formatter->request_type_options(),
 				),
@@ -109,7 +118,7 @@ final class RequestLogPage extends AbstractAdminPage {
 					'type'    => 'select',
 					'id'      => 'vwfw-request-method',
 					'name'    => 'method',
-					'label'   => 'Method',
+					'label'   => __( 'Method', 'openwpsecurity-firewall' ),
 					'value'   => $filters['method'],
 					'options' => $this->event_report_formatter->method_options(),
 				),
@@ -117,26 +126,26 @@ final class RequestLogPage extends AbstractAdminPage {
 					'type'    => 'select',
 					'id'      => 'vwfw-country-code',
 					'name'    => 'country_code',
-					'label'   => 'Country',
+					'label'   => __( 'Country', 'openwpsecurity-firewall' ),
 					'value'   => $filters['country_code'],
 					'options' => $country_select_options,
 				),
 				array(
 					'id'    => 'vwfw-request-ip',
 					'name'  => 'ip_address',
-					'label' => 'IP Contains',
+					'label' => __( 'IP Contains', 'openwpsecurity-firewall' ),
 					'value' => $filters['ip_address'],
 				),
 				array(
 					'id'    => 'vwfw-request-uri',
 					'name'  => 'request_uri',
-					'label' => 'URI Contains',
+					'label' => __( 'URI Contains', 'openwpsecurity-firewall' ),
 					'value' => $filters['request_uri'],
 				),
 				array(
 					'id'    => 'vwfw-request-agent',
 					'name'  => 'user_agent',
-					'label' => 'User Agent Contains',
+					'label' => __( 'User Agent Contains', 'openwpsecurity-firewall' ),
 					'value' => $filters['user_agent'],
 				),
 				array(
@@ -144,17 +153,17 @@ final class RequestLogPage extends AbstractAdminPage {
 					'choices' => array(
 						array(
 							'name'    => 'external_only',
-							'label'   => 'External only',
+							'label'   => __( 'External only', 'openwpsecurity-firewall' ),
 							'checked' => ! empty( $filters['external_only'] ),
 						),
 						array(
 							'name'    => 'exclude_internal',
-							'label'   => 'Hide admin/ajax/cron',
+							'label'   => __( 'Hide admin/ajax/cron', 'openwpsecurity-firewall' ),
 							'checked' => ! empty( $filters['exclude_internal'] ),
 						),
 						array(
 							'name'    => 'exclude_my_ip',
-							'label'   => 'Exclude my IP',
+							'label'   => __( 'Exclude my IP', 'openwpsecurity-firewall' ),
 							'checked' => ! empty( $filters['exclude_my_ip'] ),
 						),
 					),

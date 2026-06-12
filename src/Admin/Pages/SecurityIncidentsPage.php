@@ -49,23 +49,32 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 		$country_options = $this->security_incident_report->country_options( $this->security_incident_filter_input->country_option_filters( $filters ), $period_seconds );
 		?>
 		<div class="wrap vwfw-admin">
-			<h1>OpenWPSecurity - Firewall Security Incidents</h1>
-			<p>Review firewall interventions, challenge outcomes, temporary bans, and permanent-ban escalations.</p>
+			<h1><?php esc_html_e( 'OpenWPSecurity - Firewall Security Incidents', 'openwpsecurity-firewall' ); ?></h1>
+			<p><?php esc_html_e( 'Review firewall interventions, challenge outcomes, temporary bans, and permanent-ban escalations.', 'openwpsecurity-firewall' ); ?></p>
 			<?php $this->render_page_tabs( 'openwpsecurity-firewall-security' ); ?>
 			<?php $this->render_period_form( 'openwpsecurity-firewall-security', $period, true, $this->security_incident_filter_input->query_args( $filters ) ); ?>
 			<?php $this->render_filters_form( $filters, $country_options ); ?>
 
-			<?php $this->country_distribution_panel->render( $countries, 'Security Incidents by Country', 'Incidents' ); ?>
+			<?php $this->country_distribution_panel->render( $countries, __( 'Security Incidents by Country', 'openwpsecurity-firewall' ), __( 'Incidents', 'openwpsecurity-firewall' ) ); ?>
 
 			<?php
 			$this->record_table_panel->render(
-				'Security Incidents',
-				'Firewall interventions, challenge events, temporary bans, and permanent bans, separate from Login Protection activity.',
+				__( 'Security Incidents', 'openwpsecurity-firewall' ),
+				__( 'Firewall interventions, challenge events, temporary bans, and permanent bans, separate from Login Protection activity.', 'openwpsecurity-firewall' ),
 				$total_items,
 				$paginator->render(),
-				array( 'Time', 'Type', 'IP', 'Country', 'Request Type', 'Temporary Ban Expires', 'Details', 'Request URI' ),
+				array(
+					__( 'Time', 'openwpsecurity-firewall' ),
+					__( 'Type', 'openwpsecurity-firewall' ),
+					__( 'IP', 'openwpsecurity-firewall' ),
+					__( 'Country', 'openwpsecurity-firewall' ),
+					__( 'Request Type', 'openwpsecurity-firewall' ),
+					__( 'Temporary Ban Expires', 'openwpsecurity-firewall' ),
+					__( 'Details', 'openwpsecurity-firewall' ),
+					__( 'Request URI', 'openwpsecurity-firewall' ),
+				),
 				$rows,
-				'No security incidents found for this period.',
+				__( 'No security incidents found for this period.', 'openwpsecurity-firewall' ),
 				'widefat striped fixed vwfw-incident-table',
 				function ( array $row ): void {
 					$details = $this->event_report_formatter->details_from_json( (string) ( $row['details'] ?? '' ) );
@@ -87,7 +96,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 	}
 
 	private function render_filters_form( array $filters, array $country_options ): void {
-		$country_select_options = array( '' => 'All Countries' );
+		$country_select_options = array( '' => __( 'All Countries', 'openwpsecurity-firewall' ) );
 
 		foreach ( $country_options as $country ) {
 			$country_select_options[ (string) $country['code'] ] = (string) $country['label'];
@@ -101,7 +110,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 					'type'    => 'select',
 					'id'      => 'vwfw-incident-event-type',
 					'name'    => 'event_type',
-					'label'   => 'Event Type',
+					'label'   => __( 'Event Type', 'openwpsecurity-firewall' ),
 					'value'   => $filters['event_type'],
 					'options' => $this->event_report_formatter->event_type_options( $this->security_incident_filter_input->event_types() ),
 				),
@@ -109,7 +118,7 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 					'type'    => 'select',
 					'id'      => 'vwfw-incident-request-type',
 					'name'    => 'request_type',
-					'label'   => 'Request Type',
+					'label'   => __( 'Request Type', 'openwpsecurity-firewall' ),
 					'value'   => $filters['request_type'],
 					'options' => $this->event_report_formatter->request_type_options(),
 				),
@@ -117,20 +126,20 @@ final class SecurityIncidentsPage extends AbstractAdminPage {
 					'type'    => 'select',
 					'id'      => 'vwfw-incident-country',
 					'name'    => 'country_code',
-					'label'   => 'Country',
+					'label'   => __( 'Country', 'openwpsecurity-firewall' ),
 					'value'   => $filters['country_code'],
 					'options' => $country_select_options,
 				),
 				array(
 					'id'    => 'vwfw-incident-ip',
 					'name'  => 'ip_address',
-					'label' => 'IP Contains',
+					'label' => __( 'IP Contains', 'openwpsecurity-firewall' ),
 					'value' => $filters['ip_address'],
 				),
 				array(
 					'id'    => 'vwfw-incident-uri',
 					'name'  => 'request_uri',
-					'label' => 'URI Contains',
+					'label' => __( 'URI Contains', 'openwpsecurity-firewall' ),
 					'value' => $filters['request_uri'],
 				),
 			),
