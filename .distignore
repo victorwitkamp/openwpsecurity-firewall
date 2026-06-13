@@ -16,5 +16,6 @@ package-lock.json
 phpcs.xml.dist
 phpstan.neon.dist
 phpstan-bootstrap.php
+.phpstan.cache/
 *.md
 .wordpress-org/
