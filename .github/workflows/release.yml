@@ -47,8 +47,11 @@ jobs:
       - name: Verify compiled CSS is current
         run: git diff --exit-code -- assets/css
 
-      - name: Run PHPCS
-        run: composer phpcs
+      - name: Run WordPress Coding Standards
+        run: composer lint
+
+      - name: Run PHPStan
+        run: composer analyse
 
       - name: Run PHP lint
         run: find . -path './vendor' -prune -o -path './node_modules' -prune -o -name '*.php' -print0 | xargs -0 -n 1 php -l

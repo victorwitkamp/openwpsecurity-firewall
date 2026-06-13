@@ -3,8 +3,11 @@
 	<description>PHPCS rules for OpenWPSecurity - Firewall.</description>
 
 	<file>openwpsecurity-firewall.php</file>
+	<file>languages</file>
+	<file>phpstan-bootstrap.php</file>
 	<file>src</file>
 	<file>templates</file>
+	<file>uninstall.php</file>
 
 	<arg name="basepath" value="."/>
 	<arg name="extensions" value="php"/>
@@ -27,6 +30,7 @@
 		<exclude name="WordPress.Files.FileName"/>
 		<exclude name="WordPress.PHP.YodaConditions.NotYoda"/>
 	</rule>
+	<rule ref="Generic.PHP.RequireStrictTypes"/>
 
 	<exclude-pattern>*/vendor/*</exclude-pattern>
 </ruleset>

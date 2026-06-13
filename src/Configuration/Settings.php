@@ -45,7 +45,6 @@ final class Settings extends OptionBackedSettingsStore {
 			'whitelist_ips'                => $this->input_sanitizer->ip_addresses(
 				$this->input_sanitizer->lines( (string) ( $submission['whitelist_ips'] ?? '' ) )
 			),
-			'debug_bar_enabled'            => empty( $submission['debug_bar_enabled'] ) ? 0 : 1,
 			'enable_remote_geoip'          => empty( $submission['enable_remote_geoip'] ) ? 0 : 1,
 			'enforce_loginprotection_bans' => empty( $submission['enforce_loginprotection_bans'] ) ? 0 : 1,
 		);
@@ -60,7 +59,6 @@ final class Settings extends OptionBackedSettingsStore {
 				'event_retention_days'           => 90,
 				'trusted_ip_headers'             => array( 'REMOTE_ADDR' ),
 				'whitelist_ips'                  => array(),
-				'debug_bar_enabled'              => 0,
 				'enable_remote_geoip'            => 0,
 				'enforce_loginprotection_bans'   => 0,
 			),
@@ -83,7 +81,6 @@ final class Settings extends OptionBackedSettingsStore {
 		$settings['event_retention_days']           = max( 0, (int) $settings['event_retention_days'] );
 		$settings['trusted_ip_headers']             = $this->input_sanitizer->headers( implode( ',', (array) $settings['trusted_ip_headers'] ) );
 		$settings['whitelist_ips']                  = $this->input_sanitizer->ip_addresses( (array) $settings['whitelist_ips'] );
-		$settings['debug_bar_enabled']              = empty( $settings['debug_bar_enabled'] ) ? 0 : 1;
 		$settings['enable_remote_geoip']            = empty( $settings['enable_remote_geoip'] ) ? 0 : 1;
 		$settings['enforce_loginprotection_bans']   = empty( $settings['enforce_loginprotection_bans'] ) ? 0 : 1;
 		$settings                                  += $this->sanitize_request_handling_settings( $settings );

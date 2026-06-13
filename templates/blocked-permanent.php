@@ -1,3 +1,7 @@
+<?php
+
+declare(strict_types=1);
+?>
 <!doctype html>
 <html <?php language_attributes(); ?>>
 <head>
@@ -16,7 +20,6 @@
 			<div class="vwfw-runtime-meta">IP address: <?php echo esc_html( (string) $ip ); ?></div>
 		</div>
 	</div>
-	<?php do_action( 'openwpsecurity_firewall_render_debug_bar' ); ?>
 	<?php wp_print_footer_scripts(); ?>
 </body>
 </html>

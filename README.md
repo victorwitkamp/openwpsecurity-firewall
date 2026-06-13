@@ -62,6 +62,10 @@ All tables are dropped on plugin deletion.
 
 This plugin requires [`openwpsecurity/core`](https://github.com/victorwitkamp/openwpsecurity-core), which is bundled in the release ZIP via Composer.
 
+## Development
+
+Run `composer install` and `npm ci`, then use `composer check` for WordPress Coding Standards and PHPStan static analysis. Use `npm run build:css` for compiled styles. The repository recommends the VS Code PHP Sniffer & Beautifier and PHPStan extensions, which validate PHP files during development.
+
 ## License
 
 GPL-2.0-or-later — see [LICENSE](LICENSE).

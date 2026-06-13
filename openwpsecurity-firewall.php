@@ -3,7 +3,7 @@
  * Plugin Name: OpenWPSecurity - Firewall
  * Plugin URI:  https://github.com/victorwitkamp/openwpsecurity-firewall
  * Description: WordPress request handling, captcha challenges, permanent bans, event logging, and a security dashboard.
- * Version:     0.3.0
+ * Version:     0.4.0
  * Requires at least: 6.5
  * Tested up to: 6.9.4
  * Requires PHP: 8.2
@@ -39,7 +39,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OPENWPSECURITY_FIREWALL_VERSION', '0.3.0' );
+define( 'OPENWPSECURITY_FIREWALL_VERSION', '0.4.0' );
 define( 'OPENWPSECURITY_FIREWALL_FILE', __FILE__ );
 define( 'OPENWPSECURITY_FIREWALL_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPENWPSECURITY_FIREWALL_URL', plugin_dir_url( __FILE__ ) );
@@ -71,8 +71,8 @@ $wordpress_integration = new WordPressPluginIntegration(
 				'Firewall template file was not found.',
 				'openwpsecurity-firewall-runtime',
 				OPENWPSECURITY_FIREWALL_URL . 'assets/css/runtime.css',
-				'openwpsecurity-firewall-runtime',
-				OPENWPSECURITY_FIREWALL_URL . 'assets/js/runtime.js',
+				'',
+				'',
 				OPENWPSECURITY_FIREWALL_VERSION
 			);
 		},

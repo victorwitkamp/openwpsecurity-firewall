@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-final class SecurityIncident {
+final readonly class SecurityIncident {
 	private string $incident_type;
 	private string $ip_address;
 	private string $country_code;
@@ -35,6 +35,9 @@ final class SecurityIncident {
 		$this->evidence_json      = $evidence_json;
 	}
 
+	/**
+	 * @return array<string, string|null>
+	 */
 	public function to_row(): array {
 		return array(
 			'incident_type'      => $this->incident_type,

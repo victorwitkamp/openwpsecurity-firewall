@@ -8,7 +8,6 @@ use VictorWitkamp\OpenWPSecurity\Core\Runtime\PluginLifecycle;
 use VictorWitkamp\OpenWPSecurity\Core\Database\CreatedAtRetention;
 use VictorWitkamp\OpenWPSecurity\Firewall\Admin\Navigation\AdminMenu;
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
-use VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics\DebugBar;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\RequestLogRepository;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\SecurityIncidentRepository;
 use VictorWitkamp\OpenWPSecurity\Core\Security\Ban\PermanentBanStore;
@@ -31,7 +30,6 @@ final class Plugin implements PluginLifecycle {
 	private TemporaryBanCounterStore $temporary_ban_counter_store;
 	private TemporaryBanCleanup $temporary_ban_cleanup;
 	private RequestGuard $request_guard;
-	private DebugBar $debug_bar;
 	private AdminMenu $admin_menu;
 	private bool $runtime_initialized = false;
 
@@ -45,7 +43,6 @@ final class Plugin implements PluginLifecycle {
 		TemporaryBanCounterStore $temporary_ban_counter_store,
 		TemporaryBanCleanup $temporary_ban_cleanup,
 		RequestGuard $request_guard,
-		DebugBar $debug_bar,
 		AdminMenu $admin_menu
 	) {
 		$this->settings                    = $settings;
@@ -57,7 +54,6 @@ final class Plugin implements PluginLifecycle {
 		$this->temporary_ban_counter_store = $temporary_ban_counter_store;
 		$this->temporary_ban_cleanup       = $temporary_ban_cleanup;
 		$this->request_guard               = $request_guard;
-		$this->debug_bar                   = $debug_bar;
 		$this->admin_menu                  = $admin_menu;
 	}
 
@@ -79,7 +75,6 @@ final class Plugin implements PluginLifecycle {
 
 		$this->prepare_storage();
 		$this->request_guard->register_hooks();
-		$this->debug_bar->register_hooks();
 		$this->retention->register_hooks();
 		$this->temporary_ban_cleanup->register_hooks();
 

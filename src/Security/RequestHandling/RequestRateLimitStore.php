@@ -26,7 +26,7 @@ final class RequestRateLimitStore {
 		$history = array_values(
 			array_filter(
 				$history,
-				static function ( $timestamp ) use ( $now, $window_seconds ): bool {
+				static function ( mixed $timestamp ) use ( $now, $window_seconds ): bool {
 					return ( (int) $timestamp ) >= ( $now - $window_seconds );
 				}
 			)

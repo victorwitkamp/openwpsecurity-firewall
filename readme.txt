@@ -5,7 +5,7 @@ Tags: security, firewall, rate limiting, captcha, logging
 Requires at least: 6.5
 Tested up to: 6.9.4
 Requires PHP: 8.2
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,14 @@ Remote GeoIP lookup is never used for private, loopback, or reserved IP addresse
 6. Permanent bans management with the option to remove individual bans.
 
 == Changelog ==
+
+= 0.4.0 =
+* Updated to openwpsecurity/core 0.5.0.
+* Wrapped all admin UI strings in i18n functions for full translability.
+* Added PHPStan static analysis configuration.
+* Extracted SecurityIncidentDetailsFormatter for cleaner incident detail rendering.
+* Added CaptchaChallengeStore and CaptchaFailureStore for transient-based captcha tracking.
+* Removed debug bar diagnostics.
 
 = 0.3.0 =
 * Updated to openwpsecurity/core 0.4.0.

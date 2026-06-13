@@ -1,0 +1,15 @@
+includes:
+	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+	bootstrapFiles:
+		- phpstan-bootstrap.php
+	level: 5
+	paths:
+		- openwpsecurity-firewall.php
+		- src
+		- uninstall.php
+	parallel:
+		maximumNumberOfProcesses: 1
+	treatPhpDocTypesAsCertain: false
+	tmpDir: .phpstan.cache

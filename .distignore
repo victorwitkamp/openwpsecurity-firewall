@@ -1,6 +1,8 @@
 .git/
 .github/
 .playwright-mcp/
+.claude/
+.vscode/
 .gitattributes
 .gitignore
 .distignore
@@ -12,5 +14,7 @@ composer.lock
 package.json
 package-lock.json
 phpcs.xml.dist
+phpstan.neon.dist
+phpstan-bootstrap.php
 *.md
 .wordpress-org/

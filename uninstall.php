@@ -4,6 +4,8 @@
  * Drops all plugin-owned database tables and removes all plugin options.
  */
 
+declare(strict_types=1);
+
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }

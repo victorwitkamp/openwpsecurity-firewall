@@ -19,9 +19,8 @@ $panel-header: #f3f7f9;
 }
 
 .nav-tab-wrapper {
-	overflow-x: auto;
-	overflow-y: hidden;
-	white-space: nowrap;
+	overflow: visible;
+	white-space: normal;
 
 	.nav-tab {
 		float: none;
@@ -563,6 +562,12 @@ a.vwfw-state-item:focus {
 }
 
 @media (max-width: 782px) {
+	.nav-tab-wrapper {
+		overflow-x: auto;
+		overflow-y: hidden;
+		white-space: nowrap;
+	}
+
 	.vwfw-admin {
 		max-width: 100%;
 	}

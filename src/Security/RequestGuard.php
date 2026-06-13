@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace VictorWitkamp\OpenWPSecurity\Firewall\Security;
 
 use VictorWitkamp\OpenWPSecurity\Firewall\Configuration\Settings;
-use VictorWitkamp\OpenWPSecurity\Firewall\Diagnostics\RequestDebugState;
 use VictorWitkamp\OpenWPSecurity\Core\Database\WordPressTableReference;
 use VictorWitkamp\OpenWPSecurity\Core\Http\RequestContext;
 use VictorWitkamp\OpenWPSecurity\Core\Http\Response\RequestDenialResponder;
 use VictorWitkamp\OpenWPSecurity\Firewall\Logging\EventLogger;
 use VictorWitkamp\OpenWPSecurity\Core\Security\Ban\PermanentBanStore;
-use VictorWitkamp\OpenWPSecurity\Firewall\Security\Captcha\CaptchaGuard;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\FrontendPageVisitLogger;
 use VictorWitkamp\OpenWPSecurity\Firewall\Security\RequestHandling\RequestHandlingEnforcer;
 
@@ -27,22 +25,18 @@ final class RequestGuard {
 	private EventLogger $event_logger;
 	private RequestHandlingEnforcer $request_handling_enforcer;
 	private RequestDenialResponder $denial_responder;
-	private RequestDebugState $debug_state;
 	private RequestContext $request_context;
 	private FrontendPageVisitLogger $frontend_page_visit_logger;
-	private CaptchaGuard $captcha_guard;
 	private bool $request_logged = false;
 
-	public function __construct( Settings $settings, PermanentBanStore $ban_store, EventLogger $event_logger, RequestHandlingEnforcer $request_handling_enforcer, RequestDenialResponder $denial_responder, RequestDebugState $debug_state, RequestContext $request_context, FrontendPageVisitLogger $frontend_page_visit_logger, CaptchaGuard $captcha_guard ) {
+	public function __construct( Settings $settings, PermanentBanStore $ban_store, EventLogger $event_logger, RequestHandlingEnforcer $request_handling_enforcer, RequestDenialResponder $denial_responder, RequestContext $request_context, FrontendPageVisitLogger $frontend_page_visit_logger ) {
 		$this->settings                   = $settings;
 		$this->ban_store                  = $ban_store;
 		$this->event_logger               = $event_logger;
 		$this->request_handling_enforcer  = $request_handling_enforcer;
 		$this->denial_responder           = $denial_responder;
-		$this->debug_state                = $debug_state;
 		$this->request_context            = $request_context;
 		$this->frontend_page_visit_logger = $frontend_page_visit_logger;
-		$this->captcha_guard              = $captcha_guard;
 	}
 
 	public function register_hooks(): void {
@@ -66,19 +60,6 @@ final class RequestGuard {
 		$is_frontend_html     = $this->request_context->is_frontend_html_request();
 		$request_method       = $this->request_context->current_method();
 		$this->request_logged = true;
-
-		$this->debug_state->merge(
-			'request',
-			array(
-				'ip'               => $ip,
-				'request_type'     => $request_type,
-				'method'           => $request_method,
-				'uri'              => $this->request_context->current_url(),
-				'is_frontend_html' => $is_frontend_html,
-			)
-		);
-		$this->debug_state->add_condition( 'WordPress request logging ran during init.' );
-		$this->captcha_guard->update_debug_snapshot( $ip, $request_type );
 
 		$this->event_logger->log(
 			'request_hit',
@@ -106,18 +87,6 @@ final class RequestGuard {
 			return;
 		}
 
-		$this->captcha_guard->update_debug_snapshot( $ip, $this->request_context->current_request_type() );
-		$this->debug_state->merge(
-			'ban',
-			array(
-				'is_banned'       => true,
-				'banned_at'       => (string) ( $ban['banned_at'] ?? '' ),
-				'source'          => (string) ( $ban['source'] ?? '' ),
-				'reason'          => (string) ( $ban['reason'] ?? '' ),
-				'enforced_source' => (string) ( $ban['enforced_source'] ?? '' ),
-			)
-		);
-		$this->debug_state->add_condition( 'Permanent ban matched before content rendering.' );
 		$this->denial_responder->deny_permanently(
 			$ip,
 			$this->request_context->current_request_type(),

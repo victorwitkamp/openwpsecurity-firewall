@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(xargs grep *)",
-      "Bash(grep \"echo.*\\\\$\" /c/inetpub/victorwitkamp/wp-content/plugins/openwpsecurity-firewall/src/Admin/Pages/DashboardPage.php)"
-    ]
-  }
-}

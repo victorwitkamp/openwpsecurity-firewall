@@ -30,7 +30,7 @@ final class SettingsPage extends AbstractAdminPage {
 		?>
 		<div class="wrap vwfw-admin">
 			<h1><?php esc_html_e( 'OpenWPSecurity - Firewall Settings', 'openwpsecurity-firewall' ); ?></h1>
-			<p><?php esc_html_e( 'Configure storage, IP resolution, cross-plugin enforcement, and diagnostics.', 'openwpsecurity-firewall' ); ?></p>
+			<p><?php esc_html_e( 'Configure storage, IP resolution, and cross-plugin enforcement.', 'openwpsecurity-firewall' ); ?></p>
 			<?php $this->render_page_tabs( 'openwpsecurity-firewall-settings' ); ?>
 
 			<?php if ( $settings_updated ) : ?>
@@ -40,7 +40,7 @@ final class SettingsPage extends AbstractAdminPage {
 			<form method="post" class="vwfw-panel">
 				<?php wp_nonce_field( 'vwfw_save_settings' ); ?>
 				<div class="vwfw-settings-section">
-					<h2><?php esc_html_e( 'Runtime &amp; Diagnostics', 'openwpsecurity-firewall' ); ?></h2>
+					<h2><?php esc_html_e( 'Runtime &amp; Data Settings', 'openwpsecurity-firewall' ); ?></h2>
 					<p class="description"><?php echo wp_kses_post( __( 'Policy controls for captcha, rate limiting, and escalation are managed on the <strong>Policies</strong> page.', 'openwpsecurity-firewall' ) ); ?></p>
 					<?php $this->render_runtime_table( $settings ); ?>
 				</div>
@@ -95,16 +95,6 @@ final class SettingsPage extends AbstractAdminPage {
 						<?php esc_html_e( 'Enforce Login Protection permanent bans globally in Firewall', 'openwpsecurity-firewall' ); ?>
 					</label>
 					<p class="description"><?php esc_html_e( 'When enabled, IP addresses permanently banned by OpenWPSecurity - Login Protection are also blocked by Firewall across all request types. The Login Protection ban list remains stored separately.', 'openwpsecurity-firewall' ); ?></p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><?php esc_html_e( 'Enable debug bar', 'openwpsecurity-firewall' ); ?></th>
-				<td>
-					<label for="debug_bar_enabled">
-						<input id="debug_bar_enabled" name="debug_bar_enabled" type="checkbox" value="1" <?php checked( ! empty( $settings['debug_bar_enabled'] ) ); ?>>
-						<?php esc_html_e( 'Turn the OpenWPSecurity Firewall debug bar on for HTML responses, including frontend pages, admin screens, login screens, captcha pages, and block pages.', 'openwpsecurity-firewall' ); ?>
-					</label>
-					<p class="description"><?php esc_html_e( 'This exposes live counters and branch decisions from the firewall flow. Keep it enabled for testing, but turn it off when you no longer need visible runtime diagnostics.', 'openwpsecurity-firewall' ); ?></p>
 				</td>
 			</tr>
 			<tr>

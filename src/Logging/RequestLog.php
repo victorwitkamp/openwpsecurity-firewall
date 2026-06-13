@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-final class RequestLog {
+final readonly class RequestLog {
 	private string $activity_type;
 	private string $request_type;
 	private string $method;
@@ -31,6 +31,9 @@ final class RequestLog {
 		$this->user_agent       = $user_agent;
 	}
 
+	/**
+	 * @return array<string, int|string>
+	 */
 	public function to_row(): array {
 		return array(
 			'activity_type'    => $this->activity_type,
